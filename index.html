@@ -250,16 +250,11 @@ body.explain-only header h1{margin-bottom:18px}
   <header>
     <div class="headtop">
       <div class="headtext">
-      <h1>Collabris Number Calculator <span class="ver" title="Page version (UTC build time)">202610201557</span></h1>
+      <h1>Collabris Number Calculator <span class="ver" title="Page version (UTC build time)">202610201701</span></h1>
       <p>The Collabris number (CN) shows how many co-authorship steps separate any two scientists. It generalises
         the Erdős number: instead of measuring everyone's distance to one fixed person, it measures the distance
         between the two people you choose, using the open scholarly index <a href="https://openalex.org"
         target="_blank" rel="noopener">OpenAlex</a>.</p>
-      <p>It searches from both people at once: two breadth-first searches grow outward, one co-authorship step at a
-        time, always widening the smaller side, until they meet in the middle. Every step is finished before the
-        meeting is judged, so every shortest chain in the network searched is found. The results are exact only
-        for the co-authorship graph built from the OpenAlex records successfully retrieved, with OpenAlex's author
-        identities and the work types counted; missing or wrongly assigned records can change them.</p>
       </div>
       <svg class="logo" width="150" height="150" viewBox="0 0 150 150" role="img"
         aria-label="Person A and Person B joined by a network of co-authors">
@@ -326,6 +321,12 @@ body.explain-only header h1{margin-bottom:18px}
       <h2>How the calculator works</h2>
       <button id="explainClose" class="ghost" aria-label="Close explanation">Close</button>
     </div>
+
+    <p>It searches from both people at once: two breadth-first searches grow outward, one co-authorship step at a
+      time, always widening the smaller side, until they meet in the middle. Every step is finished before the
+      meeting is judged, so every shortest chain in the network searched is found. The results are exact only
+      for the co-authorship graph built from the OpenAlex records successfully retrieved, with OpenAlex's author
+      identities and the work types counted; missing or wrongly assigned records can change them.</p>
 
     <h3>What the results mean</h3>
     <dl class="defs">
@@ -614,7 +615,7 @@ href="https://sites.google.com/oakland.edu/grossman/home/the-erdoes-number-proje
         </div>
         <div class="f">
           <label class="lbl" for="apikey">OpenAlex API key</label>
-          <input id="apikey" class="keymask" type="text" placeholder="optional" autocomplete="off"
+          <input id="apikey" class="keymask" type="text" placeholder="your OpenAlex API key" autocomplete="off"
             spellcheck="false" autocapitalize="off" data-lpignore="true" data-1p-ignore data-form-type="other">
           <small>Optional. Sent to OpenAlex as the <code>api_key</code> URL parameter, which is how OpenAlex
             accepts keys. It is not stored, not logged and not written into any download; it is forgotten when the tab
