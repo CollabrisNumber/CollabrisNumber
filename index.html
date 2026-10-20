@@ -250,7 +250,7 @@ body.explain-only header h1{margin-bottom:18px}
   <header>
     <div class="headtop">
       <div class="headtext">
-      <h1>Collabris Number Calculator <span class="ver" title="Page version (UTC build time)">202610201701</span></h1>
+      <h1>Collabris Number Calculator <span class="ver" title="Page version (UTC build time)">202610201712</span></h1>
       <p>The Collabris number (CN) shows how many co-authorship steps separate any two scientists. It generalises
         the Erdős number: instead of measuring everyone's distance to one fixed person, it measures the distance
         between the two people you choose, using the open scholarly index <a href="https://openalex.org"
@@ -1782,8 +1782,8 @@ async function search(s) {
       hits = (await client.get("/authors", {search: q, select: sel, "per-page": "12"})).results;
     }
     P[s].hits = hits || [];
-    // Ticks carry over only when the same query is run again; a different query starts from a
-    // fresh selection with its first candidate ticked.
+    // Ticks carry over only when the same query is run again; a different query starts with
+    // nothing ticked, so the person always chooses which records are them.
     if (q !== P[s].query) P[s].selected = [];
     P[s].query = q;
     renderCands(s, P[s].hits);
@@ -1827,7 +1827,7 @@ function renderCands(s, hits) {
       ]
         .filter(Boolean)
         .join(" · ");
-      const chk = prev.size ? prev.has(id) : i === 0;
+      const chk = prev.has(id); // nothing is ticked for the user: they choose the records
       return (
         `<label class="cand"><input type="checkbox" value="${esc(id)}" ` +
         `${chk ? "checked" : ""}>
