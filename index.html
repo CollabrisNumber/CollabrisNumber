@@ -1,0 +1,3224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collabris Number Calculator</title>
+<style>
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --surface-2:#f1f2f4; --ink:#14171c; --ink-2:#2f353d; --ink-3:#4c535c;
+  --line:#dfe2e6; --accent:#c5050c; --accent-ink:#ffffff; --accent-soft:#fdeaea; --accent-dark:#9b0000;
+    --link:#a3070c; --good:#1f7a45; --good-soft:#dff3e6;
+  --warn:#8a5000; --warn-soft:#fdf0d8; --bad:#b0301f; --radius:14px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --card:#fbf6e3; --card-edge:#c4b38a;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151617; --surface:#1e2022; --surface-2:#272a2d; --ink:#f2f4f7; --ink-2:#d5dae1; --ink-3:#b4bcc6;
+    --line:#383b3f; --accent:#ff6b66; --accent-ink:#2a0606; --accent-soft:#3b2122; --accent-dark:#ff8f8a;
+      --link:#ff8f8a; --good:#6cc493; --good-soft:#1d2e24;
+    --warn:#efbd66; --warn-soft:#342a19; --bad:#f08f80; --shadow:none; --card:#2b2720; --card-edge:#6f6247;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151617; --surface:#1e2022; --surface-2:#272a2d; --ink:#f2f4f7; --ink-2:#d5dae1; --ink-3:#b4bcc6;
+  --line:#383b3f; --accent:#ff6b66; --accent-ink:#2a0606; --accent-soft:#3b2122; --accent-dark:#ff8f8a;
+    --link:#ff8f8a; --good:#6cc493; --good-soft:#1d2e24;
+  --warn:#efbd66; --warn-soft:#342a19; --bad:#f08f80; --shadow:none; --card:#2b2720; --card-edge:#6f6247;
+}
+*{box-sizing:border-box}
+a{color:var(--link);text-underline-offset:2px}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+body{border-top:10px solid var(--accent)}
+.wrap{max-width:860px;margin:0 auto;padding:36px 16px 80px}
+header h1{font-family:var(--sans);font-weight:700;font-size:34px;line-height:1.2;margin:0 0 10px;
+  color:var(--accent-dark)}
+header h1 .ver{font-family:var(--sans,system-ui,sans-serif);font-size:13px;font-weight:400;color:var(--ink-3);
+  letter-spacing:0;vertical-align:middle;white-space:nowrap}
+header p{color:var(--ink-2);margin:0 0 4px;max-width:640px}
+.headtop{display:flex;justify-content:space-between;align-items:flex-start;gap:28px}
+.headtext{min-width:0}
+.logo{flex:none;width:150px;height:150px;border-radius:14px;border:3px solid var(--surface);background:var(--surface);
+  box-shadow:0 0 0 1px var(--line),var(--shadow);margin-top:4px}
+.logo .edge{stroke:var(--ink-3);stroke-width:3;stroke-linecap:round}
+.logo .mid{fill:var(--surface-2);stroke:var(--ink-3);stroke-width:2.5}
+.logo .endp{fill:var(--accent);stroke:var(--accent-dark);stroke-width:2.5}
+.logo text{font:700 15px var(--sans);fill:var(--accent-ink);text-anchor:middle;dominant-baseline:central}
+body.explain-only .logo{display:none}
+.scale{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 28px}
+/* The scale as punched cards: buff card, clipped top-left corner (the authentic 80-column card cut).
+   The span itself is the edge colour; ::before is the card face, inset 1px with the same cut. */
+.scale > span{--cut:10px;position:relative;isolation:isolate;font-size:13.5px;color:var(--ink);
+  background:var(--card-edge);
+  padding:5px 12px 5px 16px;border-radius:0 3px 3px 3px;
+    clip-path:polygon(var(--cut) 0,100% 0,100% 100%,0 100%,0 var(--cut))}
+.scale > span::before{content:"";position:absolute;inset:1px;z-index:-1;background:var(--card);
+  border-radius:0 2px 2px 2px;
+  clip-path:polygon(calc(var(--cut) - .6px) 0,100% 0,100% 100%,0 100%,0 calc(var(--cut) - .6px))}
+.scale b{color:var(--accent-dark);font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;
+  margin-bottom:18px;box-shadow:var(--shadow)}
+label.lbl{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.picker + .picker{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.picker .lbl .tag{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;
+  background:var(--accent);color:var(--accent-ink);font-size:12px;margin-right:6px}
+.runrow{display:flex;gap:12px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:18px;
+  padding-top:16px;border-top:1px solid var(--line)}
+.runrow .hint{margin:0;flex:1;min-width:200px}
+.row{display:flex;gap:8px}
+input[type=text],input[type=email],input[type=password],input[type=number],select{
+  font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;width:100%;min-width:0}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);
+  color:var(--ink);padding:10px 16px;cursor:pointer;white-space:nowrap}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button:not(:disabled):hover{filter:brightness(.96)}
+button:disabled{opacity:.5;cursor:default}
+.hint{font-size:13px;color:var(--ink-3);margin-top:8px}
+.cands{margin-top:14px;display:none}
+#runBtn{white-space:nowrap}
+.candSummary{display:none;font-size:14px;color:var(--ink-2)}
+.cands.collapsed .candList,.cands.collapsed .tickAllRow,.cands.collapsed .candHint{display:none!important}
+.cands.foldable .candSummary{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cands.foldable:not(.collapsed) .candSummary{margin-bottom:10px}
+.cand{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+  margin-bottom:6px;cursor:pointer}
+.cand:hover{background:var(--surface-2)}
+.cand input{margin-top:4px;flex:none}
+.cand .nm{font-weight:600}
+.cand .meta{font-size:13px;color:var(--ink-2)}
+.badge{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:1px 8px;margin-left:6px;
+  vertical-align:1px}
+.badge.g{background:var(--good-soft);color:var(--good)}
+.badge.a{background:var(--accent-soft);color:var(--accent)}
+.badge.w{background:var(--warn-soft);color:var(--warn)}
+input[aria-invalid="true"]{border-color:var(--warn)}
+.explain details summary{cursor:pointer;color:var(--ink-2);font-size:13.5px}
+.explain code{font:12.5px var(--mono)}
+.actions{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+details.opts{margin-top:14px}
+details.opts summary{cursor:pointer;font-size:13.5px;color:var(--ink-2);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}
+.grid .f small{display:block;color:var(--ink-3);font-size:12px;margin-top:4px}
+.grid .f.wide{grid-column:1/-1}
+.keyHow{font-size:13px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:10px;padding:10px 14px}
+.keyHow p{margin:0 0 4px}
+.keyHow ul,.keyHow ol{margin:4px 0 0;padding-left:20px}
+.keyHow ol{margin-top:2px}
+.keyHow sup a{text-decoration:none}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px}
+.status{display:none}
+.stats{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 4px}
+.stat .v{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums}
+.stat .k{font-size:12px;color:var(--ink-3)}
+.bar{height:4px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;width:30%;background:var(--accent);animation:slide 1.2s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(330%)}}
+.log{font:12px/1.5 var(--mono);color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:10px;
+  max-height:180px;overflow:auto;margin-top:10px;white-space:pre-wrap}
+.result{display:none}
+.hero{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.heroName{text-align:left;margin:0 0 10px}
+.heroName .amp{color:var(--ink-3);font-weight:400;margin:0 .3em}
+.hero .num{text-align:left}
+.num{font-family:var(--sans);font-size:80px;line-height:1;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;min-width:70px;text-align:center;white-space:nowrap}
+.num .lbl{font-size:.42em;font-weight:600;letter-spacing:.02em;margin-right:.18em;vertical-align:.35em}
+.hero h2{margin:0 0 4px;font-size:20px}
+.hero p{margin:0;color:var(--ink-2)}
+.path{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+.path h3{font-size:14px;margin:0 0 12px;color:var(--ink-2);font-weight:600}
+.chain{list-style:none;margin:0;padding:0}
+.chain li.person{display:flex;gap:12px;align-items:center}
+.dot{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:12.5px;
+  font-weight:700;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.person.end .dot{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.person .pn{font-weight:600}
+.person a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--ink-3)}
+.person .sub{font-size:12.5px;color:var(--ink-3)}
+li.link{margin-left:14px;border-left:3px solid var(--line);padding:6px 0 6px 26px;font-size:13px;color:var(--ink-2)}
+li.link .w{font-weight:600;color:var(--ink)}
+li.link ul{margin:4px 0 0;padding-left:16px}
+li.link li{margin:2px 0}
+li.link a{color:var(--accent)}
+.more{font-size:13px;color:var(--ink-3);margin-top:14px}
+.err{color:var(--bad);font-weight:600}
+.keymask{-webkit-text-security:disc;text-security:disc}
+.note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13.5px;
+  margin-top:12px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:20px}
+.metric{background:var(--surface-2);border-radius:12px;padding:14px 16px}
+.metric .k{font-size:14px;font-weight:600;color:var(--ink-2)}
+.metric .ks{font-size:12.5px;color:var(--ink-3);margin:-2px 0 4px}
+.metric .v{font-size:28px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;margin:2px 0}
+.metric .d{font-size:13px;color:var(--ink-3);line-height:1.45}
+.export{margin-top:20px}
+.export #exportPanel{margin-top:4px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;
+  background:var(--surface-2)}
+.export #exportPanel .actions{margin-top:10px}
+.export #exportPanel button{background:var(--surface);font-size:14px}
+.export #exportPanel p{font-size:13px;color:var(--ink-2);margin:0}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);padding:7px 14px;font-size:14px}
+.ghost:hover{background:var(--surface-2)}
+header .ghost{margin-top:-12px;margin-bottom:24px}
+.explain h2{font-family:var(--sans);font-weight:700;font-size:24px;margin:0}
+.explain h3{font-size:15px;margin:24px 0 8px;color:var(--ink)}
+.explain p,.explain li,.explain dd{color:var(--ink-2)}
+.explain p{margin:0 0 8px}
+.ex-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.defs{margin:0}
+.defs dt{font-weight:650;margin-top:12px}
+.defs dd{margin:2px 0 0}
+.tablewrap{overflow-x:auto;margin:8px 0 10px}
+.ex-table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+.ex-table th,.ex-table td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+.ex-table th{font-size:12px;color:var(--ink-3);font-weight:600}
+.ex-table td:last-child,.ex-table th:last-child{text-align:right}
+.cmp td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
+.cmp td,.cmp th{text-align:left!important;vertical-align:top}
+.ex-table tr.sum td{font-weight:650;color:var(--ink);border-bottom:2px solid var(--line)}
+.steps{padding-left:20px;margin:0}
+.steps li{margin:6px 0}
+.plain,.refs{padding-left:18px;margin:0}
+.plain li,.refs li{margin:6px 0}
+.refs li{font-size:13.5px}
+.explain a,footer a{color:var(--link)}
+footer{font-size:12.5px;color:var(--ink-3);margin-top:28px}
+body.explain-only header p,body.explain-only header .scale,body.explain-only #explainBtn,
+body.explain-only .wrap > section:not(#explain){display:none!important}
+body.explain-only header h1{margin-bottom:18px}
+/* Two-state buttons: raised when off, pressed in when on */
+.toggle{background:var(--surface);border:1px solid var(--line);color:var(--ink);font-size:14px;padding:8px 14px;
+  box-shadow:0 1px 0 rgba(0,0,0,.06),0 2px 5px rgba(0,0,0,.08);transition:box-shadow .12s,transform .12s,
+    background .12s}
+.toggle:hover{border-color:var(--accent)}
+.toggle[aria-pressed="true"]{background:var(--accent);border-color:var(--accent-dark);color:#fff;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.18);transform:translateY(1px)}
+.scale{align-items:center}
+.scale .btns{display:flex;gap:8px;margin-left:6px}
+.scale .btns .toggle{padding:5px 12px;font-size:13.5px}
+.bugpanel{margin:-16px 0 24px;padding:16px 22px;border:1px solid var(--line);border-top:3px solid var(--accent);
+  border-radius:var(--radius);background:var(--surface);color:var(--ink-2);font-size:14px;box-shadow:var(--shadow)}
+.bugpanel a{font-weight:600}
+.bugpanel p{max-width:none}
+.citeText{margin:8px 0 10px;padding:8px 12px;border-left:3px solid var(--accent);background:var(--surface-2);
+  color:var(--ink);border-radius:0 8px 8px 0}
+#citeCopy{font-size:13.5px;padding:5px 12px}
+.chainsbox{margin-top:20px}
+.chainsbox .chainsHead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.chainsbox .chainsHead .hint{margin:0}
+#chainsPanel .path:first-child{margin-top:14px}
+@media (max-width:560px){
+  header h1{font-size:28px}
+  .headtop{gap:14px}
+  .logo{width:84px;height:84px;border-radius:10px;border-width:2px}
+  .row{flex-direction:column}
+  .num{font-size:64px}
+}
+/* Utility classes instead of inline style="" attributes, so a strict Content-Security-Policy
+   (only the page's own style and script blocks) does not change the layout. */
+.u-ml6{margin-left:6px!important}
+.u-m12{margin:12px 0 0!important}
+.u-m10{margin:10px 0 0!important}
+.u-m2{margin:2px 0 0!important}
+.u-mt2{margin-top:2px!important}
+.u-mt4{margin-top:4px!important}
+.u-mt6{margin-top:6px!important}
+.u-mt8{margin-top:8px!important}
+.u-pointer{cursor:pointer!important}
+.u-ink3{color:var(--ink-3)!important}
+.u-center{align-items:center!important}
+.tickAllRow{margin-bottom:8px!important;display:none}
+.statusHead{display:flex!important;justify-content:space-between!important;align-items:center!important;
+  gap:12px!important}
+.statusText{font-weight:600!important}
+.fbody{margin-top:6px!important;font-weight:400!important}
+.mergeList{margin:6px 0 6px 18px!important}
+.noChain{margin:0 0 4px!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="headtop">
+      <div class="headtext">
+      <h1>Collabris Number Calculator <span class="ver" title="Page version (UTC build time)">202610201557</span></h1>
+      <p>The Collabris number (CN) shows how many co-authorship steps separate any two scientists. It generalises
+        the Erdős number: instead of measuring everyone's distance to one fixed person, it measures the distance
+        between the two people you choose, using the open scholarly index <a href="https://openalex.org"
+        target="_blank" rel="noopener">OpenAlex</a>.</p>
+      <p>It searches from both people at once: two breadth-first searches grow outward, one co-authorship step at a
+        time, always widening the smaller side, until they meet in the middle. Every step is finished before the
+        meeting is judged, so every shortest chain in the network searched is found. The results are exact only
+        for the co-authorship graph built from the OpenAlex records successfully retrieved, with OpenAlex's author
+        identities and the work types counted; missing or wrongly assigned records can change them.</p>
+      </div>
+      <svg class="logo" width="150" height="150" viewBox="0 0 150 150" role="img"
+        aria-label="Person A and Person B joined by a network of co-authors">
+        <line class="edge" x1="24" y1="75" x2="52" y2="47"/>
+        <line class="edge" x1="24" y1="75" x2="52" y2="103"/>
+        <line class="edge" x1="52" y1="47" x2="75" y2="75"/>
+        <line class="edge" x1="52" y1="103" x2="75" y2="75"/>
+        <line class="edge" x1="75" y1="75" x2="98" y2="47"/>
+        <line class="edge" x1="75" y1="75" x2="98" y2="103"/>
+        <line class="edge" x1="98" y1="47" x2="126" y2="75"/>
+        <line class="edge" x1="98" y1="103" x2="126" y2="75"/>
+        <line class="edge" x1="52" y1="47" x2="75" y2="30"/>
+        <line class="edge" x1="75" y1="30" x2="98" y2="47"/>
+        <line class="edge" x1="52" y1="103" x2="75" y2="120"/>
+        <line class="edge" x1="75" y1="120" x2="98" y2="103"/>
+        <circle class="mid" cx="52" cy="47" r="10"/>
+        <circle class="mid" cx="52" cy="103" r="10"/>
+        <circle class="mid" cx="75" cy="75" r="10"/>
+        <circle class="mid" cx="98" cy="47" r="10"/>
+        <circle class="mid" cx="98" cy="103" r="10"/>
+        <circle class="mid" cx="75" cy="30" r="10"/>
+        <circle class="mid" cx="75" cy="120" r="10"/>
+        <circle class="endp" cx="24" cy="75" r="17"/>
+        <circle class="endp" cx="126" cy="75" r="17"/>
+        <text x="24" y="75">A</text>
+        <text x="126" y="75">B</text>
+      </svg>
+    </div>
+    <div class="scale">
+      <span><b>CN = 0</b> the same person</span><span><b>CN = 1</b> published together</span><span><b>CN
+        = 2</b> share a co-author</span><span><b>CN = 3+</b> and so on</span>
+      <div class="btns">
+        <button type="button" id="explainBtn" class="toggle" aria-expanded="false" aria-controls="explain"
+          title="Opens in a new tab">Explanation ↗</button>
+        <button type="button" id="bugBtn" class="toggle" aria-pressed="false" aria-expanded="false"
+          aria-controls="bugPanel">Report a bug</button>
+        <button type="button" id="citeBtn" class="toggle" aria-pressed="false" aria-expanded="false"
+          aria-controls="citePanel">About</button>
+      </div>
+    </div>
+    <div class="bugpanel" id="citePanel" hidden>
+      The Collabris number calculator is adapted from the <a href="https://sheldrick-number.github.io/" target="_blank"
+        rel="noopener">Sheldrick number calculator</a>. If you use it, please cite:
+      <p class="citeText" id="citeText">Guzei, I. A., Andrea, A., Dauter, Z. &amp; Jaskólski, M. (2026). <i>J.
+        Appl. Cryst.</i> (in preparation).</p>
+      <button type="button" id="citeCopy" class="toggle">Copy citation</button> <span class="hint u-ml6"
+        id="citeCopied"></span>
+      <p class="u-m12">This is calculator version <b id="aboutVer"></b>. The version number is the time the page
+        was built (year, month, day, hour and minute, UTC), shown next to the title and recorded in every downloaded
+        result. Please quote it with any result you report, together with the date of the calculation, because results
+        can change as OpenAlex is updated. This version was created at <b id="aboutDate"></b>.</p>
+      <p class="u-m10">The CN = 0, 1, 2 and 3+ items at the top of the page are drawn as punched cards, a nod to
+        the cards on which early scientific programs were once run.</p>
+    </div>
+    <div class="bugpanel" id="bugPanel" hidden>
+      Found something wrong? E-mail <a id="bugMail"
+        href="mailto:iguzei@chem.wisc.edu?subject=Collabris%20calculator%20bug%20report">iguzei@chem.wisc.edu</a>.
+      Please say whom you searched for, what you expected and what the page showed. The link opens your e-mail
+        program with the page version and, if you have run a calculation, the two people already filled in.
+    </div>
+  </header>
+  <section id="explain" class="card explain" hidden>
+    <div class="ex-head">
+      <h2>How the calculator works</h2>
+      <button id="explainClose" class="ghost" aria-label="Close explanation">Close</button>
+    </div>
+
+    <h3>What the results mean</h3>
+    <dl class="defs">
+      <dt>Collabris number (CN)</dt>
+      <dd>The smallest number of co-authorship steps between Person A and Person B. CN = 0 means the two are the
+        same person, CN = 1 means they published together, CN = 2 means they share a co-author, and so on. This is
+        the main result. Every other figure only compares pairs with the same CN.</dd>
+      <dt>Newman distance</dt>
+      <dd>How close the two are when collaborations are weighted by strength, following Newman (2001). Each joint
+        work with <i>n</i> authors adds 1/(<i>n</i>−1) to the tie strength of every pair of its authors. <i>n</i> is
+        the number of distinct people on the OpenAlex author list, counted after the same identity merging the search
+        uses (records you ticked for one person count once). So the quality of OpenAlex's author identities affects not
+        only whether a link exists but also its strength: a person split across two records makes <i>n</i> one larger,
+        and two people wrongly merged make it one smaller. A link's length is 1 ÷ its strength, and a chain's Newman
+        distance is the sum of its link lengths. The page reports the lowest value among all chains with the fewest
+        steps. <b>Lower means closer.</b></dd>
+      <dt>Vintage</dt>
+      <dd>The first year a chain of this length between the two existed. For each link it takes the year of that
+        pair's first joint work. A chain only exists once all its links do, so the chain dates from its latest link.
+        The pair's vintage is the earliest such year across all shortest chains. For direct co-authors it is the year
+        of their first joint publication. Joint works without a publication year are never ignored: such a link
+        could be older than its first dated work, so a chain containing it is known only to be "no later than"
+        its dated links, and a link with no dated work at all leaves its chain's year unknown. The pair's vintage is
+        shown as a year only when every possibility gives the same answer; otherwise as "≤ year" (an upper bound),
+        or "–" when it cannot be bounded.</dd>
+      <dt>Chains of people</dt>
+      <dd>How many different sequences of people of the minimum length connect the two. Each chain counts once,
+        however many papers support its links. Two chains count as different if they differ in at least one person;
+        they can still share other people and links, so the count is not a number of independent routes. A pair
+        with many chains is usually more robustly connected than a pair with one, but removing a single person or
+        link shared by all chains can still cut every one of them. Shown for CN 2 and above; direct co-authors have
+        exactly one chain, so the page shows their joint publications instead.</dd>
+      <dt>Paper routes</dt>
+      <dd>The same chains counted paper by paper: each route picks one joint work for every link, so a link with
+        3 joint works triples the count. For a 2-step chain through a colleague who wrote 2 papers with Person A and 3
+        with Person B, it is 2 × 3 = 6. Routes through different people are added up. The number grows fast when a
+        chain passes through a very prolific co-author, so compare pairs by chains of people first.</dd>
+    </dl>
+
+    <h3>Worked example</h3>
+    <p>Two pairs both have CN = 2:</p>
+    <div class="tablewrap"><table class="ex-table">
+      <thead><tr><th>Link</th><th>Joint works</th><th>Strength</th><th>Length (1 ÷ strength)</th></tr></thead>
+      <tbody>
+        <tr><td>Anna – Ben</td><td>four 2-author papers</td><td>4 × 1/1 = 4</td><td>0.25</td></tr>
+        <tr><td>Ben – Eve</td><td>two 3-author papers</td><td>2 × 1/2 = 1</td><td>1.00</td></tr>
+        <tr class="sum"><td colspan="3">Anna ↔ Eve: Newman distance</td><td>1.25</td></tr>
+        <tr><td>Carl – Dora</td><td>one 20-author paper</td><td>1/19</td><td>19.00</td></tr>
+        <tr><td>Dora – Eve</td><td>two 3-author papers</td><td>1</td><td>1.00</td></tr>
+        <tr class="sum"><td colspan="3">Carl ↔ Eve: Newman distance</td><td>20.00</td></tr>
+      </tbody>
+    </table></div>
+    <p>Anna is closer to Eve than Carl is: her chain goes through repeated small-team work, while Carl's depends on
+      a single large-consortium paper. If the Newman distances were equal, the earlier vintage would decide.</p>
+
+    <h3>The search, step by step</h3>
+    <ol class="steps">
+      <li><b>Find the two people.</b> Each name, ORCID or OpenAlex ID is looked up in OpenAlex. One person can be
+        split across several OpenAlex records, so tick all of them: the ticked records are treated as one person, so
+        their joint papers with each co-author are added up into one link and a chain through them is counted once.
+        If the same record is ticked for both people, they are the same person and CN = 0. People further along a
+        chain are taken as OpenAlex holds them. Someone split across several OpenAlex records counts as several
+        people. That can only make the CN and the Newman distance too high, never too low.</li>
+      <li><b>Search from both ends at once.</b> The calculator runs a two-way (bidirectional) breadth-first search.
+        It keeps two growing circles of people: everyone within a certain number of steps of Person A, and everyone
+        within a certain number of steps of Person B. At each step it widens one circle by one co-authorship step: it
+        fetches all the works of the people on that circle's edge from OpenAlex and records every co-author as a person
+        one step further out. It always widens the circle whose edge holds fewer people, because that costs fewer
+        requests; when both edges are the same size, the circle with the smaller radius goes first. Every person on the
+        edge is read before the step ends. Up to 50 OpenAlex records are queried in each request, with up to 100 works
+        returned per page, and up to three requests in flight at a time. Without an API key OpenAlex returns at most
+        10,000 works per query, so a larger query is split: a group of people into halves, and one person with more
+        than 10,000 works into ranges of publication years. With a key, results are read with a cursor and need no
+        splitting.</li>
+      <li><b>Why two ways.</b> A one-way search to a person 4 steps away must read everyone within 3 steps of the
+        start, which for a well-connected scientist can be hundreds of thousands of people. Two circles of radius 2
+        each meet in the middle after reading only the people within 1 or 2 steps of either end, typically a tiny
+        fraction of that. The answer is the same; only the cost differs.</li>
+      <li><b>Stop when the circles meet.</b> As soon as someone is inside both circles, a chain has been found;
+        its length is that person's distance from Person A plus their distance from Person B, and the CN is the
+        smallest such sum.
+        The step that found it is always finished, and both circles are complete up to their radius, so every chain of
+        the minimum length passes through the meeting zone: the first meeting is guaranteed to be a shortest chain.
+        The Newman distance, vintage and chain counts are then exact <i>conditional on</i> the records retrieved:
+        they describe the co-authorship graph built from the OpenAlex works successfully received in this run, with
+        OpenAlex's author identities (records ticked for one person merged, nothing else) and the work types chosen
+        under Options. They are not a statement about the true collaboration record, which OpenAlex may hold
+        incompletely or with author records split or merged wrongly. For every query, the number of works received
+        is checked against the number OpenAlex reports; if any are missing, the result says the search was incomplete
+        and shows the CN as an upper bound (“CN ≤ 3”), because missing works could only add links. Matching counts
+        are a strong sign that nothing was lost, not a proof: works OpenAlex does not count are not seen either.
+        OpenAlex list results show only the first 100 authors of a work, so a work showing 100 authors is read
+        again on its own to get its full author list. If one circle stops growing before the two meet, the two people are not connected in OpenAlex at
+        all. If the two circles' radii add up to the “Give up beyond CN” limit (6 by default) without meeting, the
+        search stops and reports that no chain was found up to that length.</li>
+      <li><b>Check records that share an ORCID (diagnostic).</b> The search is then repeated with OpenAlex author
+        records that carry the same ORCID treated as one person, the two searched people's included. If an ORCID
+        learnt during the search shows that two people already in the network are one person, the check is run
+        again from the start with those records merged (replies already received are reused), up to six times;
+        if conflicts remain after that, the check is marked approximate. These merges are not used for
+        the reported numbers, because OpenAlex sometimes attaches an ORCID to the wrong person's record, which would
+        merge two people and make the numbers too low. If the merged search gives a lower CN, a lower Newman distance or
+        an earlier vintage, the page says so and links the records concerned, so they can be checked by hand. The check
+        searches no deeper than the first answer, and has its own request allowance equal to the budget.</li>
+      <li><b>Rank the chains.</b> While searching, the page records how many works every pair shares, their
+        Newman strength and their first joint year. Among the shortest chains it then finds the lowest Newman distance
+        and the earliest vintage, and lists chains ordered by Newman distance.</li>
+    </ol>
+
+    <h3>Sources</h3>
+    <ul class="plain">
+      <li><b>Everything:</b> <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a>, an
+        open index of scholarly works, queried live from your browser. Nothing is sent anywhere except OpenAlex.</li>
+      <li><b>Counting rules:</b> by default, journal articles, book chapters and proceedings papers count.
+        OpenAlex records typed as preprints, errata, datasets, front matter (paratext), peer reviews, retractions or
+        supplementary material are left out, and so are likely meeting abstracts. Choosing “All OpenAlex records”
+        under Options › Definition counts all of them. OpenAlex has no record type for meeting abstracts (they are
+        filed as articles), so they are recognised by their supplement-style pagination - congress pages such as C123
+        or s45, abstract pages such as 123a, or a supplement issue (S1, Suppl). This is a heuristic: an occasional
+        abstract may slip through, and an occasional full paper in a supplement issue may be left out.</li>
+    </ul>
+
+    <h3>What counts as a collaboration</h3>
+    <p>The Collabris number is meant to say “they were in the room”: two people did the work and signed it
+      together. A journal publication meets that test. A joint dataset deposition, a preprint that duplicates a later
+      paper, or a meeting abstract often does not, or would count the same collaboration twice. So the <b>standard
+      Collabris number counts publications only</b>: journal articles, book chapters and proceedings papers.</p>
+
+    <h3>Data version and reproducibility</h3>
+    <p>Every connection is resolved against OpenAlex, which is re-indexed continually, so a result is reproducible
+      only relative to the OpenAlex data available at the time of computation. A CN is therefore a statement about the
+      OpenAlex of a particular day. Both downloads record the retrieval window and the calculator version, so a
+      published number can be audited later against the data it rested on.</p>
+
+    <h3>Compared with the Erdős number</h3>
+    <p>The Collabris number borrows its idea from the Erdős number, which counts co-authorship steps from the
+      mathematician Paul Erdős (1913–1996). The term was first used in print by Casper Goffman in 1969. An Erdős number
+      is a Collabris number with Person B fixed as Erdős; the American Mathematical Society's collaboration-distance
+      tool does the same for any two mathematicians within Mathematical Reviews.</p>
+    <div class="tablewrap"><table class="ex-table cmp">
+      <thead><tr><th></th><th>Erdős number</th><th>Collabris number</th></tr></thead>
+      <tbody>
+        <tr><td>The two ends</td><td>any person and Paul Erdős</td><td>any two people</td></tr>
+        <tr><td>Main data source</td><td>Mathematical Reviews (MathSciNet), mathematics only</td><td>OpenAlex,
+          all fields</td></tr>
+        <tr><td>How a number is found</td><td>curated lists, or the AMS collaboration-distance
+          tool</td><td>live two-way breadth-first search in this page</td></tr>
+        <tr><td>Weighted versions</td><td>“Rational” Erdős number 1/<i>p</i> for <i>p</i> joint papers (Barr);
+          a variant counting only two-author papers</td><td>Newman distance: each joint paper adds 1/(<i>n</i>−1),
+          summed along the whole chain</td></tr>
+        <tr><td>Tie-breaking</td><td>not usual</td><td>Newman distance, then vintage</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>What is the same.</b> Both are the number of steps in the shortest co-authorship chain: 0 for the same
+      person, 1 for co-authors, 2 for co-authors of co-authors. A joint paper creates a link however many authors it
+      has.</p>
+    <p><b>What is different.</b></p>
+    <ul class="plain">
+      <li><b>Team size.</b> Mathematics papers usually have few authors. In the experimental sciences a paper can
+        have dozens or thousands, and one large paper can link many people who hardly worked together. That is why this
+        calculator adds the Newman distance: it gives those links little weight, much as the Erdős Number Project's
+        two-author-only variant does, but without discarding them.</li>
+      <li><b>Data and scope.</b> Erdős numbers are normally computed within Mathematical Reviews, so they cover
+        mathematics well and other fields poorly. The Collabris number uses OpenAlex, which covers all fields, but its
+        author records are generated automatically and are less carefully checked. Please check the linked papers on a
+        surprising chain.</li>
+      <li><b>Typical values.</b> Among mathematicians with an Erdős number, the median is 5 (mean 4.65, Erdős
+        Number Project, 2004 data). Across all of science, most pairs of active researchers are a handful of steps
+        apart, which is why the default search limit is 6.</li>
+      <li><b>Extra measures.</b> Erdős numbers are usually reported as a single number. The Collabris number also
+        reports Newman distance, vintage and the number of shortest chains (of people and of papers), so pairs with
+        the same CN can be ranked.</li>
+    </ul>
+
+    <h3>Limitations</h3>
+    <ul class="plain">
+      <li><b>Author records:</b> OpenAlex sometimes merges two people into one record or splits one person into
+        several. A wrong merge can create a chain that does not really exist, and a split can hide one. Records that
+        merely share an ORCID are not merged for the reported numbers; the ORCID check shows what such merges would
+        change. Follow the linked papers and records on a chain to check it.</li>
+      <li><b>Exactness is conditional.</b> All shortest chains and their statistics are exact for the graph built
+        from the records successfully retrieved, under OpenAlex's author identities and the chosen work types —
+        not for the real-world collaboration network.</li>
+      <li><b>Large-team papers</b> count fully for the Collabris number, as in the Erdős number convention, but
+        add almost nothing to Newman strength. Skipping them under Options speeds up the search but may overestimate
+        the CN.</li>
+      <li><b>The Newman distance</b> is the minimum over <i>shortest</i> chains. A longer chain through much
+        stronger ties can have a lower total. When the people searched include one, the page mentions it, but the true
+        unrestricted minimum would require searching far more of the network.</li>
+    </ul>
+
+    <h3>References</h3>
+    <ul class="refs">
+      <li>M. E. J. Newman (2001). Scientific collaboration networks. II. Shortest paths, weighted networks, and
+        centrality. <i>Physical Review E</i> 64, 016132. <a href="https://doi.org/10.1103/PhysRevE.64.016132"
+        target="_blank" rel="noopener">doi:10.1103/PhysRevE.64.016132</a> — source of the collaboration weight
+        1/(<i>n</i>−1) and the weighted distance.</li>
+      <li>M. E. J. Newman (2001). The structure of scientific collaboration networks. <i>PNAS</i> 98(2), 404–409.
+        <a href="https://doi.org/10.1073/pnas.98.2.404" target="_blank"
+        rel="noopener">doi:10.1073/pnas.98.2.404</a></li>
+      <li>J. Priem, H. Piwowar, R. Orr (2022). OpenAlex: A fully-open index of scholarly works, authors, venues,
+        institutions, and concepts. <a href="https://arxiv.org/abs/2205.01833" target="_blank"
+        rel="noopener">arXiv:2205.01833</a></li>
+      <li>C. Goffman (1969). And what is your Erdős number? <i>American Mathematical Monthly</i> 76(7), 791.</li>
+      <li>J. W. Grossman, The Erdős Number Project, Oakland University: <a
+        href="https://sites.google.com/oakland.edu/grossman/home/the-erdoes-number-project" target="_blank"
+        rel="noopener">project home</a> and <a
+href="https://sites.google.com/oakland.edu/grossman/home/the-erdoes-number-project/facts-about-erdoes-numbers-and-the-collaboration-graph"
+        target="_blank" rel="noopener">facts about Erdős numbers</a> (collaboration statistics from Mathematical
+        Reviews, 2004).</li>
+    </ul>
+  </section>
+
+
+  <section class="card">
+    <div class="picker" id="pickerA">
+      <label class="lbl" for="qA"><span class="tag">A</span>Person A</label>
+      <div class="row">
+        <input id="qA" type="text" placeholder="Name, OpenAlex ID (A5…) or ORCID" autocomplete="off">
+        <button id="searchBtnA" class="primary">Find</button>
+      </div>
+      <div id="candsA" class="cands">
+        <div id="candSummaryA" class="candSummary"></div>
+        <label class="chk tickAllRow" id="tickAllRowA"><input id="tickAllA" type="checkbox"> Tick all records
+          (only if they are all the same person)</label>
+        <div id="candListA" class="candList"></div>
+        <div class="hint u-mt6 candHint" id="candHintA"></div>
+      </div>
+    </div>
+    <div class="picker" id="pickerB">
+      <label class="lbl" for="qB"><span class="tag">B</span>Person B</label>
+      <div class="row">
+        <input id="qB" type="text" placeholder="Name, OpenAlex ID (A5…) or ORCID" autocomplete="off">
+        <button id="searchBtnB" class="primary">Find</button>
+      </div>
+      <div id="candsB" class="cands">
+        <div id="candSummaryB" class="candSummary"></div>
+        <label class="chk tickAllRow" id="tickAllRowB"><input id="tickAllB" type="checkbox"> Tick all records
+          (only if they are all the same person)</label>
+        <div id="candListB" class="candList"></div>
+        <div class="hint u-mt6 candHint" id="candHintB"></div>
+      </div>
+    </div>
+    <div class="runrow">
+      <div class="hint" id="runHint">Find both people, then calculate.</div>
+      <button id="runBtn" class="primary" disabled>Calculate Collabris number</button>
+    </div>
+    <div class="hint">Names are looked up in OpenAlex; if a person has several OpenAlex records, tick all of them.
+      Large calculations can run into OpenAlex's daily limit. A free <a
+      href="https://openalex.org/settings/api" target="_blank" rel="noopener">OpenAlex API key</a> gives you ten
+      times more requests; <a href="#apikey" class="openKey">add it under Options</a>, where you will also find how
+      to get one.</div>
+
+    <div id="keyNote" class="note" hidden></div>
+    <div id="truncNote" class="note" hidden></div>
+
+    <details class="opts" id="opts">
+      <summary>Options</summary>
+      <div class="grid">
+        <div class="f">
+          <label class="lbl" for="count">Definition: what counts as a joint work</label>
+          <select id="count">
+            <option value="pubs">Publications only (standard)</option>
+            <option value="openalex-all">All OpenAlex records (variant)</option>
+          </select>
+          <small><b>Publications only:</b> journal articles, book chapters and proceedings papers. Preprints,
+            errata, datasets, front matter, peer reviews, retractions, supplementary material and likely meeting
+            abstracts in OpenAlex are left out. <b>All OpenAlex records:</b> every OpenAlex record counts. <a
+            href="#explain" class="openExplain">Why publications only</a>.</small>
+        </div>
+        <div class="f">
+          <label class="lbl" for="maxDepth">Give up beyond CN</label>
+          <input id="maxDepth" type="number" min="1" max="12" value="6">
+        </div>
+        <div class="f">
+          <label class="lbl" for="budget">OpenAlex request budget</label>
+          <input id="budget" type="number" min="10" value="1500">
+          <small>Repeat searches in this tab reuse earlier replies. Retries after a busy or failed reply
+            count against the budget.</small>
+        </div>
+        <div class="f">
+          <label class="lbl" for="maxAuthors">Skip works with more than N authors</label>
+          <input id="maxAuthors" type="number" min="0" value="0">
+          <small>0 = no limit. The limit is applied inside the OpenAlex query, so skipped works cost no
+            requests. It may overestimate the CN.</small>
+        </div>
+        <div class="f">
+          <label class="lbl" for="apikey">OpenAlex API key</label>
+          <input id="apikey" class="keymask" type="text" placeholder="optional" autocomplete="off"
+            spellcheck="false" autocapitalize="off" data-lpignore="true" data-1p-ignore data-form-type="other">
+          <small>Optional. Sent to OpenAlex as the <code>api_key</code> URL parameter, which is how OpenAlex
+            accepts keys. It is not stored, not logged and not written into any download; it is forgotten when the tab
+            closes.</small>
+        </div>
+        <div class="f wide keyHow" id="keyHow">
+          <p><b>Getting an API key.</b> You can get a free OpenAlex API key <sup><a
+            href="https://help.openalex.org/api/authentication/" target="_blank" rel="noopener"
+            title="OpenAlex help: authentication">[1]</a></sup>:</p>
+          <ul>
+            <li>Directly on the website (takes about 30 seconds):
+              <ol>
+                <li>Go to <a href="https://openalex.org/" target="_blank" rel="noopener">OpenAlex</a> and create a
+                  free account.</li>
+                <li>Navigate to your <a href="https://openalex.org/settings/api" target="_blank"
+                  rel="noopener">OpenAlex API Settings</a>.</li>
+                <li>Copy your API key from the Settings → API key section, and paste it into the field above.</li>
+              </ol>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section id="status" class="card status" aria-live="polite">
+    <div class="statusHead">
+      <div id="statusText" class="statusText">Working…</div>
+      <button id="stopBtn">Stop</button>
+    </div>
+    <div id="runAdvice" class="note" hidden></div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="sLayer">–</div><div class="k">steps searched (A + B)</div></div>
+      <div class="stat"><div class="v" id="sPeople">0</div><div class="k">people reached</div></div>
+      <div class="stat"><div class="v" id="sWorks">0</div><div class="k">works scanned</div></div>
+      <div class="stat"><div class="v" id="sReq">0</div><div class="k">OpenAlex requests</div></div>
+    </div>
+    <div class="bar" id="bar"><i></i></div>
+    <details><summary class="hint u-pointer">Log</summary><div class="log" id="log"></div></details>
+  </section>
+
+  <section id="result" class="card result"></section>
+
+  <footer>
+    All co-authorship data is fetched live from <a href="https://openalex.org" target="_blank"
+      rel="noopener">OpenAlex</a> and searched from both people at once. <a href="#explain" class="openExplain">How
+      this works</a>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const API = "https://api.openalex.org";
+const BATCH = 50; // OpenAlex OR-filter values per request (OpenAlex allows up to 100)
+const AUTHORSHIPS_LIST_CAP = 100; // OpenAlex list results truncate authorships to this many
+const PER_PAGE = 100; // results per page: the OpenAlex maximum (200 is deprecated)
+const CONCURRENCY = 3; // OpenAlex requests in flight at once (bounded worker pool)
+const SIDES = ["A", "B"];
+const NON_PUBLICATION_TYPES = [
+  "dataset",
+  "paratext",
+  "preprint",
+  "erratum",
+  "peer-review",
+  "retraction",
+  "supplementary-materials"
+];
+// OpenAlex has no type for meeting abstracts (they are filed as "article"), so they are recognised
+// by supplement-style pagination: congress pages C123 / s45, abstract pages 123a, or a supplement
+// issue (S1, S2, Suppl). A heuristic, documented on the page.
+function looksLikeMeetingAbstract(w) {
+  const b = w.biblio || {},
+    fp = String(b.first_page || "").trim(),
+    iss = String(b.issue || "").trim();
+  return /^[CcSs]\d+$/.test(fp) || /^\d+a$/.test(fp) || /^S\d*$/i.test(iss) || /suppl/i.test(iss);
+}
+const PAUSE_MS = 125; // ~8 requests/second, below OpenAlex's keyless limit of 10 per second
+const $ = id => document.getElementById(id);
+const DEFS = {pubs: "Publications only (standard)", "openalex-all": "All OpenAlex records (variant)"};
+
+const sid = x => (x ? String(x).split("/").pop() : x);
+const esc = s =>
+  String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
+const fmt = n => (typeof n === "bigint" ? n : Number(n)).toLocaleString();
+// Chain counts are exact integer counts and can pass 2^53, so they are BigInt; JSON gets
+// a number while one fits exactly, and a decimal string beyond that.
+const bigJson = v => (typeof v === "bigint" ? (v <= 9007199254740991n ? Number(v) : v.toString()) : v);
+
+// ------------------------------------------------------------------ OpenAlex client
+// When OpenAlex data was actually retrieved in this tab. Replies are cached for the life of
+// the tab, so a result may rest on data fetched at any point inside this window; the window,
+// not the moment a button was pressed, is what pins a published number.
+const fetched = {first: null, last: null, count: 0};
+// Reply cache, shared by all searches in this tab. Works pages are stored compacted to the fields
+// the search reads, and the cache is capped by size: when it is full, the replies used longest
+// ago are dropped first (a dropped reply is simply fetched again if it is needed again).
+const cache = new Map();
+const CACHE_MAX_CHARS = 60e6; // about 60 MB of JSON text
+let cacheChars = 0;
+const cacheSize = new Map();
+function cacheGet(key) {
+  if (!cache.has(key)) return undefined;
+  const v = cache.get(key),
+    n = cacheSize.get(key);
+  cache.delete(key);
+  cache.set(key, v); // most recently used goes to the back
+  cacheSize.delete(key);
+  cacheSize.set(key, n);
+  return v;
+}
+function cachePut(key, v) {
+  const n = JSON.stringify(v).length;
+  if (cache.has(key)) {
+    cacheChars -= cacheSize.get(key);
+    cache.delete(key);
+    cacheSize.delete(key);
+  }
+  cache.set(key, v);
+  cacheSize.set(key, n);
+  cacheChars += n;
+  for (const k of cache.keys()) {
+    if (cacheChars <= CACHE_MAX_CHARS || k === key) break;
+    cacheChars -= cacheSize.get(k);
+    cache.delete(k);
+    cacheSize.delete(k);
+  }
+}
+// Only what the search reads from a work is kept: OpenAlex authorships also carry institutions,
+// countries and affiliation strings, which are most of a reply's size and are never used here.
+function compactWorks(data) {
+  if (!data || !Array.isArray(data.results)) return data;
+  return {
+    meta: data.meta && {next_cursor: data.meta.next_cursor, count: data.meta.count},
+    results: data.results.map(w => ({
+      id: w.id,
+      doi: w.doi,
+      title: w.title,
+      publication_year: w.publication_year,
+      type: w.type,
+      biblio: w.biblio && {first_page: w.biblio.first_page, issue: w.biblio.issue},
+      authorships: (w.authorships || []).map(a => ({
+        raw_author_name: a.raw_author_name,
+        author: a.author && {id: a.author.id, display_name: a.author.display_name, orcid: a.author.orcid}
+      }))
+    }))
+  };
+}
+const inflight = new Map(); // in-flight GETs, so two batches never fetch the same URL twice
+class Client {
+  constructor(opts) {
+    this.apiKey = opts.apiKey;
+    this.budget = opts.budget;
+    this.signal = opts.signal;
+    this.noAuthorsCount = false;
+    this.attempted = 0; // HTTP requests actually sent, retries included
+    this.succeeded = 0; // responses parsed successfully
+    this.active = 0;
+    this.waiting = [];
+    this.nextStart = 0;
+  }
+  // What the UI calls "requests": every request that left the browser, so the budget
+  // means what it says even when 429s and 5xx errors force retries.
+  get requests() {
+    return this.attempted;
+  }
+
+  // Bounded worker pool + global rate limit: at most CONCURRENCY requests in flight and
+  // one new request started every PAUSE_MS, so parallelism never becomes a request storm.
+  async acquire() {
+    if (this.active >= CONCURRENCY) await new Promise(r => this.waiting.push(r));
+    this.active++;
+    try {
+      const now = Date.now(),
+        wait = Math.max(0, this.nextStart - now);
+      this.nextStart = Math.max(now, this.nextStart) + PAUSE_MS;
+      if (wait) await sleep(wait, this.signal);
+    } catch (e) {
+      this.release();
+      throw e;
+    }
+  }
+  release() {
+    this.active--;
+    const r = this.waiting.shift();
+    if (r) r();
+  }
+
+  get(path, params, tries = 6) {
+    const p = new URLSearchParams(params);
+    const key = path + "?" + p.toString();
+    if (cache.has(key)) return Promise.resolve(cacheGet(key));
+    const pending = inflight.get(key);
+    if (pending) return pending;
+    if (this.apiKey) p.set("api_key", this.apiKey);
+    const pr = this.fetchWithRetry(API + path + "?" + p.toString(), key, tries);
+    inflight.set(key, pr);
+    return pr.then(
+      d => {
+        inflight.delete(key);
+        return d;
+      },
+      e => {
+        inflight.delete(key);
+        throw e;
+      }
+    );
+  }
+
+  async fetchWithRetry(url, key, tries = 6) {
+    let lastErr;
+    for (let attempt = 0; attempt < tries; attempt++) {
+      if (cache.has(key)) return cacheGet(key);
+      let backoff = 0;
+      await this.acquire();
+      try {
+        // Counted inside the slot, so the budget is a hard ceiling: with several requests in
+        // flight, a check made before acquire() could be passed by each of them in turn.
+        if (this.attempted >= this.budget) throw new Error("budget");
+        this.attempted++;
+        const r = await fetch(url, {signal: this.signal});
+        // A rejected API key (HTTP 401) is almost always something the browser filled into the
+        // key field by itself. Drop the key, say so once, and repeat the request without it.
+        if (r.status === 401 && new URL(url).searchParams.has("api_key")) {
+          const first = !this.keyRejected;
+          this.apiKey = "";
+          this.keyRejected = true;
+          const u = new URL(url);
+          u.searchParams.delete("api_key");
+          url = u.toString();
+          if (first && typeof onKeyRejected === "function") onKeyRejected();
+          this.attempted--;
+          attempt--;
+          continue;
+        }
+        const rate = rateInfo(r.headers, url);
+        if (rate) rateSeen = {...rate, at: Date.now(), keyUsed: !!this.apiKey};
+        if (r.status === 429 || r.status >= 500) {
+          const detail = (await r.text().catch(() => "")).slice(0, 300);
+          lastErr = oaError(r.status === 429 ? "rate" : "server", r.status, url, detail, attempt + 1, !!this.apiKey);
+          if (r.status === 429 && rate) Object.assign(lastErr.oa, rate);
+          // HTTP 429 means either "too many requests this second" (wait and retry) or "today's
+          // allowance is used up" (retrying cannot help before midnight UTC). OpenAlex's
+          // X-RateLimit-Remaining header tells them apart; when it says nothing is left, stop now.
+          if (r.status === 429 && ((rate && rate.exhausted) || /not_enough_credits/i.test(detail))) {
+            lastErr.oa.exhausted = true;
+            lastErr.status = 429;
+            throw lastErr;
+          }
+          backoff = 1000 * 2 ** attempt;
+        } else if (!r.ok) {
+          const detail = (await r.text().catch(() => "")).slice(0, 300);
+          const kind = r.status === 403 && /key_not_activated/i.test(detail) ? "keyInactive" : "http";
+          const e = oaError(kind, r.status, url, detail, attempt + 1, !!this.apiKey);
+          e.status = r.status;
+          throw e;
+        } else {
+          const raw = await r.json();
+          const data = key.startsWith("/works?")
+            ? compactWorks(raw)
+            : key.startsWith("/works/")
+              ? compactWorks({results: [raw]}).results[0]
+              : raw;
+          this.succeeded++;
+          const at = new Date().toISOString();
+          if (!fetched.first) fetched.first = at;
+          fetched.last = at;
+          fetched.count++;
+          cachePut(key, data);
+          return data;
+        }
+      } catch (e) {
+        if (e.name === "AbortError" || e.status || e.message === "budget") throw e;
+        lastErr = oaError("network", null, url, e.message || "", attempt + 1, !!this.apiKey);
+        backoff = 1000 * 2 ** attempt;
+      } finally {
+        this.release();
+      }
+      await sleep(backoff, this.signal);
+    }
+    if (lastErr && lastErr.oa) lastErr.oa.tries = tries;
+    throw lastErr || oaError("network", null, url, "", tries, !!this.apiKey);
+  }
+  // Which OpenAlex author records carry these ORCIDs, asked of OpenAlex itself rather than
+  // inferred from authorships we happen to have seen. Batched 50 ORCIDs per request and cached.
+  // An ORCID missing from the result (lookup failed, or nothing came back) is left unresolved,
+  // and the caller then falls back to an author.orcid works query rather than risking a gap.
+  async authorsByOrcid(orcids) {
+    const records = new Map(),
+      asked = new Set();
+    for (let i = 0; i < orcids.length; i += BATCH) {
+      const part = orcids.slice(i, i + BATCH);
+      // Fifty ORCIDs can carry more author records than fit on one page (people split across
+      // records), so every page is read. A batch counts as answered only once all its pages are in.
+      const found = [];
+      let refused = false,
+        total = null;
+      for (let page = 1; ; page++) {
+        let d;
+        try {
+          d = await this.get(
+            "/authors",
+            {
+              filter: "orcid:" + part.join("|"),
+              select: "id,orcid,display_name",
+              "per-page": String(PER_PAGE),
+              page: String(page)
+            },
+            2
+          );
+        } catch (e) {
+          // Stopped, out of requests, daily allowance used up or key not activated: nothing a
+          // fallback could fix, so it ends the search with its own explanation.
+          if (e.name === "AbortError" || e.message === "budget" || (e.oa && e.oa.exhausted) || e.status === 403)
+            throw e;
+          refused = true;
+          break;
+        }
+        const res = d.results || [];
+        found.push(...res);
+        if (d.meta && typeof d.meta.count === "number") total = d.meta.count;
+        if (res.length < PER_PAGE || (total !== null && page * PER_PAGE >= total)) break;
+      }
+      if (refused) break; // the endpoint is refusing: leave the rest unanswered rather than
+      // retrying 50 ORCIDs at a time, and let the ORCID fallback cover them
+      // A batch that came back with fewer records than OpenAlex reported for it is not settled:
+      // its ORCIDs stay unanswered, so the works query by ORCID covers them instead.
+      const complete = total === null || new Set(found.map(a => a && a.id)).size >= total;
+      if (complete) for (const o of part) asked.add(o); // OpenAlex answered for these, empty result or not
+      for (const a of found) {
+        const o = sid(a.orcid),
+          id = sid(a.id);
+        if (!o || !id) continue;
+        if (!records.has(o)) records.set(o, []);
+        if (!records.get(o).includes(id)) records.get(o).push(id);
+      }
+    }
+    // `asked` is what separates "OpenAlex says there is no such record" from "OpenAlex did not
+    // answer": only the first may be remembered as settled.
+    return {records, asked};
+  }
+  // field: "author.id" or "author.orcid". maxAuthors is applied inside the OpenAlex
+  // filter, so skipped works cost no requests.
+  // Every query is checked for completeness: the distinct works it returned (from its own pages,
+  // or from the parts it was split into) must reach OpenAlex's meta.count for it. A shortfall is
+  // recorded in this.incomplete, and a result built on it is not presented as definitive.
+  // `emitted` (shared by one top-level query and its parts) yields each work only once.
+  async *works(field, values, opt, yr, emitted = new Set()) {
+    let base = field + ":" + values.join("|");
+    // yr = [from, to]; a null end is open, so no work is left outside the ranges by its date.
+    if (yr && yr[0] !== null) base += `,from_publication_date:${yr[0]}-01-01`;
+    if (yr && yr[1] !== null) base += `,to_publication_date:${yr[1]}-12-31`;
+    if (!opt.inclOther) base += NON_PUBLICATION_TYPES.map(t => ",type:!" + t).join("");
+    let filter = base;
+    if (opt.maxAuthors && !this.noAuthorsCount) filter += ",authors_count:<" + (opt.maxAuthors + 1);
+    const select = "id,doi,title,publication_year,authorships,type,biblio";
+    // OpenAlex (since 2026) allows cursor paging past the first page only with an API key.
+    // Without a key the works are read with numbered pages instead, which OpenAlex allows for
+    // the first 10,000 results of a query; a batch with more is split in half and read in parts.
+    for (;;) {
+      const got = new Set(); // distinct works this query returned
+      const nBefore = (this.incomplete || []).length;
+      let total = null; // OpenAlex's meta.count for this query
+      const take = function* (res) {
+        for (const w of res) {
+          const id = w && w.id;
+          if (id) got.add(id);
+          if (id && emitted.has(id)) continue;
+          if (id) emitted.add(id);
+          yield w;
+        }
+      };
+      try {
+        if (this.apiKey) {
+          let cursor = "*";
+          while (cursor) {
+            const d = await this.get("/works", {filter, select, "per-page": String(PER_PAGE), cursor});
+            if (total === null && d.meta && typeof d.meta.count === "number") total = d.meta.count;
+            const res = d.results || [];
+            yield* take(res);
+            cursor = res.length ? d.meta && d.meta.next_cursor : null;
+          }
+        } else {
+          const PAGED_MAX = 10000;
+          let split = false;
+          for (let page = 1; ; page++) {
+            const d = await this.get("/works", {filter, select, "per-page": String(PER_PAGE), page: String(page)});
+            if (page === 1) {
+              total = d.meta && typeof d.meta.count === "number" ? d.meta.count : null;
+              if (total !== null && total > PAGED_MAX && values.length > 1) {
+                const h = Math.ceil(values.length / 2);
+                for (const part of [values.slice(0, h), values.slice(h)])
+                  for (const id of yield* this.works(field, part, opt, yr, emitted)) got.add(id);
+                split = true;
+                break;
+              }
+              // One person with more than 10,000 works: read them by ranges of publication years.
+              // The first split covers every date: [open–1799], [1800–mid], [mid+1–next year] and
+              // [next year+1–open], so stray early or future dates are read too. Works with no
+              // publication date at all fall outside every range; the completeness check below
+              // records them as missing.
+              const nextYear = new Date().getUTCFullYear() + 1;
+              if (total !== null && total > PAGED_MAX && values.length === 1 && (!yr || (yr[0] !== null && yr[1] !== null))) {
+                const [lo, hi] = yr || [1800, nextYear];
+                if (hi > lo) {
+                  const mid = Math.floor((lo + hi) / 2);
+                  const parts = [
+                    [lo, mid],
+                    [mid + 1, hi]
+                  ];
+                  if (!yr) parts.unshift([null, 1799]), parts.push([nextYear + 1, null]);
+                  for (const r of parts)
+                    for (const id of yield* this.works(field, values, opt, r, emitted)) got.add(id);
+                  split = true;
+                  break;
+                }
+              }
+            }
+            const res = d.results || [];
+            yield* take(res);
+            if (res.length < PER_PAGE || page * PER_PAGE >= Math.min(total ?? Infinity, PAGED_MAX)) break;
+          }
+          if (!split && total !== null && total > PAGED_MAX) {
+            this.truncated = (this.truncated || 0) + 1;
+            if (typeof onWorksTruncated === "function") onWorksTruncated(values[0], total);
+          }
+        }
+        // Parts already checked themselves; a shortfall here that the parts did not record (works
+        // without a usable publication year, for example) is recorded for this query.
+        const partsShort = (this.incomplete || []).length > nBefore;
+        if (total !== null && got.size < total && !partsShort)
+          this.noteIncomplete({field, people: values.length, years: yr || null, expected: total, read: got.size});
+        return got;
+      } catch (e) {
+        if (e.status === 400 && filter !== base) {
+          this.noAuthorsCount = true;
+          filter = base;
+          continue;
+        } // older API: filter client-side
+        if (e.status === 401 && !this.apiKey) continue; // key rejected during cursor paging: read by pages instead
+        throw e;
+      }
+    }
+  }
+  // OpenAlex list results show at most the first 100 authorships of a work (filters still search
+  // all of them). A work showing 100 is read again on its own, which returns the full author list,
+  // so co-authors past position 100 are not missed and n in 1/(n-1) is right. Cached.
+  async fullAuthorships(id) {
+    const wid = sid(id);
+    if (!wid) return null;
+    let d;
+    try {
+      d = await this.get("/works/" + wid, {select: "id,authorships"});
+    } catch (e) {
+      if (e.name === "AbortError" || e.message === "budget" || (e.oa && e.oa.exhausted) || e.status === 403) throw e;
+      // The work's full author list could not be read: its co-authors past position 100 may be
+      // missing, so the search is recorded as incomplete rather than stopped.
+      this.noteIncomplete({field: "full author list of " + wid, people: 0, years: null, expected: 1, read: 0});
+      return null;
+    }
+    if (!this.fullAuthorLists) this.fullAuthorLists = new Set();
+    this.fullAuthorLists.add(wid);
+    return d && Array.isArray(d.authorships) ? d.authorships : null;
+  }
+  // A query that returned fewer works than OpenAlex reported for it.
+  noteIncomplete(rec) {
+    if (!this.incomplete) this.incomplete = [];
+    this.incomplete.push(rec);
+  }
+}
+function sleep(ms, signal) {
+  return new Promise((res, rej) => {
+    if (signal && signal.aborted) return rej(new DOMException("Aborted", "AbortError"));
+    const onAbort = () => {
+      clearTimeout(t);
+      rej(new DOMException("Aborted", "AbortError"));
+    };
+    // The listener is removed when the timer fires, so a long run does not leave
+    // thousands of dead abort listeners on the signal.
+    const t = setTimeout(() => {
+      if (signal) signal.removeEventListener("abort", onAbort);
+      res();
+    }, ms);
+    if (signal) signal.addEventListener("abort", onAbort, {once: true});
+  });
+}
+
+// ------------------------------------------------------------------ Two-way BFS
+// Newman (2001) tie strength: each joint work with n authors adds 1/(n-1) to every
+// pair of its authors. Newman distance of a chain = sum of 1/strength over its links.
+const ekey = (u, v) => (u < v ? u + "|" + v : v + "|" + u);
+
+// Union-find over identity keys ("r:<OpenAlex record>", "o:<ORCID>") for the ORCID check. Each
+// class keeps its member list, so all records and ORCIDs of one person can be listed.
+class Identities {
+  constructor() {
+    this.parent = new Map();
+    this.list = new Map();
+  }
+  find(k) {
+    if (!this.parent.has(k)) {
+      this.parent.set(k, k);
+      this.list.set(k, [k]);
+      return k;
+    }
+    let r = k;
+    while (this.parent.get(r) !== r) r = this.parent.get(r);
+    while (this.parent.get(k) !== r) {
+      const n = this.parent.get(k);
+      this.parent.set(k, r);
+      k = n;
+    }
+    return r;
+  }
+  union(a, b) {
+    let ra = this.find(a),
+      rb = this.find(b);
+    if (ra === rb) return ra;
+    if (this.list.get(ra).length < this.list.get(rb).length) [ra, rb] = [rb, ra];
+    this.parent.set(rb, ra);
+    this.list.get(ra).push(...this.list.get(rb));
+    this.list.delete(rb);
+    return ra;
+  }
+  members(k) {
+    return this.list.get(this.find(k));
+  }
+}
+const MAX_REBUILDS = 6; // ORCID check: searches repeated after an identity conflict, at most
+
+// seedsIn: {A: {ids, orcids}, B: {ids, orcids}} - the OpenAlex records ticked for each person.
+// Two breadth-first searches grow at the same time, one from each person. Each search keeps its
+// own distances and predecessor sets; the co-authorship links (E) are shared, because a link
+// found from either side is the same link. The side with the smaller frontier is widened next.
+async function computeCN(client, seedsIn, opt, ui) {
+  const skippedAbstracts = new Set();
+  // ORCID check (opt.orcidMerge only): OpenAlex records that carry the same ORCID are taken as
+  // one person. Identities live in a union-find over keys "r:<record>" and "o:<ORCID>" (opt.ident,
+  // kept across rebuilds), and each identity class has one graph node per run. If a newly learnt
+  // ORCID joins two classes that BOTH already have graph nodes, the graph built so far holds two
+  // nodes for one person; the step is finished and the search returns {restart: true}, and the
+  // caller runs it again with the identities learnt so far (cached replies make that cheap).
+  // The reported numbers never use this: an ORCID that OpenAlex attached to the wrong record would
+  // merge two people and make the numbers too low.
+  const merge = !!opt.orcidMerge;
+  const U = merge ? opt.ident || (opt.ident = new Identities()) : null;
+  const classNode = new Map(); // union-find root -> this run's graph node
+  let conflict = null; // first pair of graph nodes found to be one person
+  const nodeOfKey = k => classNode.get(U.find(k));
+  const link = (a, b) => {
+    const ra = U.find(a),
+      rb = U.find(b);
+    if (ra === rb) return;
+    const na = classNode.get(ra),
+      nb = classNode.get(rb);
+    classNode.delete(ra);
+    classNode.delete(rb);
+    const r = U.union(ra, rb);
+    if (na !== undefined) classNode.set(r, na);
+    else if (nb !== undefined) classNode.set(r, nb);
+    if (na !== undefined && nb !== undefined && na !== nb && !conflict) conflict = [na, nb];
+  };
+  const classRecs = node => U.members("r:" + node).filter(k => k[0] === "r").map(k => k.slice(2));
+  const classOrcs = node => U.members("r:" + node).filter(k => k[0] === "o").map(k => k.slice(2));
+  const alias = new Map(); // ticked OpenAlex record -> the node of the person it was ticked for
+  const extraIds = new Map(); // node -> the OpenAlex records searched under it (main search)
+  const addExtra = (node, id) => {
+    if (!extraIds.has(node)) extraIds.set(node, []);
+    if (!extraIds.get(node).includes(id)) extraIds.get(node).push(id);
+  };
+  // The records ticked for one person are one node: the first ticked record names it. If a record
+  // was ticked for both people (or, in the ORCID check, shares an ORCID with the other person), the
+  // two people are one node and the answer is 0.
+  const root = {};
+  for (const s of SIDES) {
+    const {ids, orcids} = seedsIn[s];
+    if (merge) {
+      ids.forEach((id, j) => {
+        link("r:" + ids[0], "r:" + id);
+        const o = sid(orcids[j]);
+        if (o) link("r:" + id, "o:" + o);
+      });
+      let node = nodeOfKey("r:" + ids[0]);
+      if (node === undefined) classNode.set(U.find("r:" + ids[0]), (node = ids[0]));
+      root[s] = node;
+    } else {
+      const node = ids.map(id => alias.get(id)).find(Boolean) || ids[0];
+      root[s] = node;
+      ids.forEach(id => {
+        if (!alias.has(id)) alias.set(id, node);
+        addExtra(node, id);
+      });
+    }
+  }
+  const nodeFor = (raw, orc) => {
+    if (!merge) return alias.has(raw) ? alias.get(raw) : raw;
+    const k = "r:" + raw;
+    if (orc) link(k, "o:" + orc);
+    let n = nodeOfKey(k);
+    if (n === undefined) classNode.set(U.find(k), (n = raw));
+    return n;
+  };
+  const names = new Map();
+  for (const s of SIDES) names.set(root[s], seedsIn[s].name || root[s]);
+
+  const S = {};
+  for (const s of SIDES) S[s] = {dist: new Map([[root[s], 0]]), preds: new Map(), frontier: [root[s]], depth: 0};
+  const E = new Map(); // edge key -> {w: joint works, nw: Newman strength, fy: first year, ev: [...]}
+  const seenPair = new Set(),
+    seenWork = new Set();
+  const orcidRecords = new Map(); // ORCID -> the OpenAlex author records carrying it, per /authors
+  const orcidQueried = new Set(); // ORCIDs already given a fallback works query
+  let works = 0;
+  const reached = () => {
+    let n = S.A.dist.size;
+    for (const k of S.B.dist.keys()) if (!S.A.dist.has(k)) n++;
+    return n;
+  };
+
+  // Identity before works. Every OpenAlex record carrying a node's ORCID is resolved through
+  // /authors and then expanded by ID, so a split record is never missed; the duplicate
+  // "author.orcid:" works query is only skipped for an ORCID OpenAlex has resolved, and is
+  // still issued whenever the resolution failed or returned nothing.
+  const resolveIdentities = async plan => {
+    const pending = [...new Set([].concat(...plan.map(e => e.orcids)).filter(o => o && !orcidRecords.has(o)))];
+    if (pending.length) {
+      const {records, asked} = await client.authorsByOrcid(pending);
+      for (const o of pending) if (asked.has(o)) orcidRecords.set(o, records.get(o) || []);
+    }
+    for (const e of plan) {
+      for (const o of e.orcids) {
+        const recs = orcidRecords.get(o) || [];
+        if (!recs.length) {
+          if (!orcidQueried.has(o)) {
+            orcidQueried.add(o);
+            (e.fallback = e.fallback || []).push(o);
+          }
+          continue;
+        }
+        // Every record OpenAlex lists for this ORCID joins the person. A record that is already
+        // another node in the graph is a conflict: the search is rebuilt after this step.
+        for (const id of recs) link("o:" + o, "r:" + id);
+      }
+    }
+    if (merge) for (const e of plan) if (!conflict) e.ids = [...new Set([e.node, ...classRecs(e.node)])];
+  };
+
+  // The shortest meeting: the smallest distA + distB over people both searches have reached.
+  const bestMeeting = () => {
+    let best = null;
+    const [small, big] = S.A.dist.size <= S.B.dist.size ? [S.A.dist, S.B.dist] : [S.B.dist, S.A.dist];
+    for (const [n, d] of small)
+      if (big.has(n)) {
+        const t = d + big.get(n);
+        if (best === null || t < best) best = t;
+      }
+    return best;
+  };
+  const merged = () => {
+    const out = new Map();
+    if (!merge) return out;
+    for (const n of new Set(classNode.values())) {
+      const r = classRecs(n);
+      if (r.length > 1) out.set(n, r);
+    }
+    return out;
+  };
+
+  // One full step of one side's search: every person on its frontier is expanded, so every
+  // shortest chain through that step is seen before the meeting is judged.
+  const expand = async side => {
+    const T = S[side],
+      other = S[side === "A" ? "B" : "A"],
+      k = T.depth;
+    const {dist, preds} = T;
+    ui.layer(S.A.depth + S.B.depth + 1, side, T.frontier.length, k + 1);
+    const next = [];
+    const plan = T.frontier.map(node => ({
+      node,
+      ids: merge ? [...new Set([node, ...classRecs(node)])] : [...new Set([node, ...(extraIds.get(node) || [])])],
+      orcids: merge ? classOrcs(node) : []
+    }));
+    await resolveIdentities(plan);
+    const batches = pick => {
+      const out = [];
+      let cur = {vals: [], nodes: new Set()};
+      for (const e of plan) {
+        const all = pick(e);
+        if (!all) continue;
+        // A node with more than BATCH identifiers is split over several requests, so no OR-filter
+        // ever carries more than BATCH values; each request still knows which node it serves.
+        for (let i = 0; i < all.length; i += BATCH) {
+          const vals = all.slice(i, i + BATCH);
+          if (cur.vals.length + vals.length > BATCH && cur.vals.length) {
+            out.push(cur);
+            cur = {vals: [], nodes: new Set()};
+          }
+          cur.vals.push(...vals);
+          cur.nodes.add(e.node);
+        }
+      }
+      if (cur.vals.length) out.push(cur);
+      return out;
+    };
+
+    const consume = async (field, bt) => {
+      const bset = bt.nodes;
+      for await (const w of client.works(field, bt.vals, opt)) {
+        let auths = w.authorships || [];
+        if (auths.length >= AUTHORSHIPS_LIST_CAP) {
+          const full = await client.fullAuthorships(w.id);
+          if (full && full.length > auths.length) auths = full;
+        }
+        if (opt.maxAuthors && auths.length > opt.maxAuthors) continue;
+        if (!opt.inclAbstracts && looksLikeMeetingAbstract(w)) {
+          skippedAbstracts.add(w.id);
+          continue;
+        }
+        if (!seenWork.has(w.id)) {
+          seenWork.add(w.id);
+          works++;
+        }
+        const ids = [],
+          idSet = new Set();
+        let anonymous = 0;
+        for (const a of auths) {
+          const raw = sid(a.author && a.author.id),
+            orc = sid(a.author && a.author.orcid);
+          const id = raw ? nodeFor(raw, orc) : null;
+          if (!id) {
+            anonymous++;
+            continue;
+          }
+          if (!idSet.has(id)) {
+            idSet.add(id);
+            ids.push(id);
+          }
+          if (!names.has(id)) names.set(id, (a.author && a.author.display_name) || id);
+        }
+        // Team size: the number of distinct persons (duplicate records/aliases merged), so a
+        // paper gets the same weight whichever side reads it.
+        const nAuth = ids.length + anonymous;
+        // Only pairs that touch this batch's frontier are built; on a large consortium paper the
+        // other pairs are never materialised.
+        const us = [];
+        for (const x of ids) if (bset.has(x)) us.push(x);
+        const nw = 1 / Math.max(1, nAuth - 1),
+          y = Number.isInteger(+w.publication_year) && w.publication_year !== null ? +w.publication_year : null;
+        let wref = null; // one evidence record per work, shared by all its pairs
+        for (const u of us) {
+          for (const v of ids) {
+            if (v === u) continue;
+            const e = ekey(u, v),
+              pk = w.id + "#" + e;
+            // A work read from both sides adds to a link only once.
+            if (!seenPair.has(pk)) {
+              seenPair.add(pk);
+              let ed = E.get(e);
+              if (!ed) {
+                ed = {w: 0, nw: 0, fy: null, nd: 0, ev: []};
+                E.set(e, ed);
+              }
+              ed.w += 1;
+              ed.nw += nw;
+              if (y && (ed.fy === null || y < ed.fy)) ed.fy = y;
+              if (!y) ed.nd += 1; // undated work: the link's first year is then only bounded
+              if (!wref) wref = {year: y, title: (w.title || "").trim(), doi: w.doi, id: sid(w.id)};
+              ed.ev.push(wref);
+            }
+            if (!dist.has(v)) {
+              dist.set(v, k + 1);
+              next.push(v);
+            }
+            if (dist.get(v) === k + 1) {
+              if (!preds.has(v)) preds.set(v, new Set());
+              preds.get(v).add(u);
+            }
+          }
+        }
+        if (works % 200 === 0) ui.progress(reached(), works, client.requests);
+      }
+      ui.progress(reached(), works, client.requests);
+    };
+
+    // Bounded worker pool over the batches: a few run at a time, and the client's global
+    // rate limit keeps the combined request rate below OpenAlex's per-second limit.
+    const runJobs = async jobs => {
+      let i = 0;
+      const worker = async () => {
+        while (i < jobs.length) {
+          const [field, bt] = jobs[i++];
+          await consume(field, bt);
+        }
+      };
+      await Promise.all(Array.from({length: Math.min(CONCURRENCY, jobs.length)}, () => worker()));
+    };
+
+    await runJobs(batches(e => e.ids).map(bt => ["author.id", bt]));
+    const orcJobs = batches(e => (e.fallback && e.fallback.length ? e.fallback : null)).map(bt => [
+      "author.orcid",
+      bt
+    ]);
+    if (orcJobs.length) await runJobs(orcJobs);
+    T.depth = k + 1;
+    T.frontier = next;
+    const met = next.filter(v => other.dist.has(v)).length;
+    ui.log(
+      `  Person ${side}'s side, step ${k + 1}: ${fmt(next.length)} new people` +
+        (met ? `, ${fmt(met)} already reached from Person ${side === "A" ? "B" : "A"}.` : ".")
+    );
+  };
+
+  const done = best =>
+    Object.assign(finish(best, root, S, E, names), {
+      skippedAbstracts: skippedAbstracts.size,
+      merged: merged(),
+      depths: {A: S.A.depth, B: S.B.depth},
+      identityConflict: !!conflict
+    });
+  // ORCID check: two graph nodes turned out to be one person. Unless this is the last allowed
+  // rebuild, stop here; the caller searches again with the identities learnt so far.
+  const restart = () => (conflict && !opt.noRestart ? {restart: true, conflict} : null);
+
+  let b = bestMeeting();
+  while (b === null) {
+    if (S.A.depth + S.B.depth >= opt.maxDepth)
+      return {
+        cn: null,
+        E,
+        names,
+        skippedAbstracts: skippedAbstracts.size,
+        depths: {A: S.A.depth, B: S.B.depth},
+        identityConflict: !!conflict,
+        reason: `No connection found up to CN = ${opt.maxDepth}.`
+      };
+    const empty = SIDES.filter(s => !S[s].frontier.length);
+    if (empty.length)
+      return {
+        cn: null,
+        E,
+        names,
+        skippedAbstracts: skippedAbstracts.size,
+        depths: {A: S.A.depth, B: S.B.depth},
+        identityConflict: !!conflict,
+        exhausted: empty[0],
+        reason:
+          `Everyone connected to Person ${empty[0]} (${fmt(S[empty[0]].dist.size)} ` +
+          `${S[empty[0]].dist.size === 1 ? "person" : "people"}) has been searched, and Person ` +
+          `${empty[0] === "A" ? "B" : "A"} is not among them: in the works searched, the two are not ` +
+          `connected by any chain of co-authors.`
+      };
+    // Widen the side whose frontier holds fewer people: that step costs fewer requests. On a
+    // tie, the side that has been searched less deeply goes first.
+    const side =
+      S.A.frontier.length < S.B.frontier.length
+        ? "A"
+        : S.B.frontier.length < S.A.frontier.length
+          ? "B"
+          : S.A.depth <= S.B.depth
+            ? "A"
+            : "B";
+    await expand(side);
+    const rs = restart();
+    if (rs) return rs;
+    b = bestMeeting();
+  }
+  const r = done(b);
+  r.complete = true;
+  return r;
+}
+
+// Link data between u and v, from OpenAlex. A link that was never recorded is a bug, not a unit
+// tie: fail loudly.
+function linkData(u, v, E) {
+  const ed = E.get(ekey(u, v));
+  if (!ed) throw new Error(`Internal error: no recorded link between ${u} and ${v}. The ` + `result was not computed.`);
+  return {w: ed.w, nw: ed.nw, fy: ed.fy, undated: ed.nd || 0, works: ed.ev};
+}
+// The year a link first existed, as bounds. All joint works dated: exactly the first year
+// (lo = hi = fy). Some undated: no later than the first dated year, but possibly earlier
+// (lo = -Infinity). None dated: unknown (lo = -Infinity, hi = +Infinity). An undated work is
+// never treated as "no constraint", which would make a vintage look earlier than the data show.
+function linkYears(l) {
+  const hi = l.fy === null || l.fy === undefined ? Infinity : l.fy;
+  return {lo: l.undated ? -Infinity : hi, hi};
+}
+
+// D is the length of the shortest chain. Every shortest chain A = p0, p1, ..., pD = B has exactly
+// one person at position t, and for t = max(0, D - depthB) that person lies inside both searches
+// (t <= depthA because D <= depthA + depthB), with complete predecessor sets on both sides. So
+// the shortest chains are exactly the combinations "a shortest A-side chain to m" + "a shortest
+// B-side chain from m", over the people m with distA = t and distB = D - t, each counted once.
+function finish(D, root, S, E, names) {
+  const L = (u, v) => linkData(u, v, E);
+  const t = Math.max(0, D - S.B.depth);
+  const meets = [...S.A.dist].filter(([n, da]) => da === t && S.B.dist.get(n) === D - t).map(([n]) => n);
+
+  // Per side: best (lowest Newman) chain from the side's person to n, earliest vintage, and the
+  // number of shortest chains of people and of papers.
+  const side = s => {
+    const {dist, preds} = S[s];
+    const memoN = new Map(),
+      memoV = new Map(),
+      memoC = new Map(),
+      memoP = new Map();
+    const bestN = n => {
+      if (memoN.has(n)) return memoN.get(n);
+      let r;
+      if (dist.get(n) === 0) r = {d: 0, vint: -Infinity, vlo: -Infinity, path: [n]};
+      else {
+        r = null;
+        for (const p of preds.get(n) || []) {
+          const bp = bestN(p),
+            ly = linkYears(L(p, n));
+          // vint / vlo: latest and earliest possible year this chain first existed
+          const c = {
+            d: bp.d + 1 / L(p, n).nw,
+            vint: Math.max(bp.vint, ly.hi),
+            vlo: Math.max(bp.vlo, ly.lo),
+            path: [...bp.path, n]
+          };
+          if (!r || c.d < r.d - 1e-12 || (Math.abs(c.d - r.d) < 1e-12 && c.vint < r.vint)) r = c;
+        }
+      }
+      memoN.set(n, r);
+      return r;
+    };
+    // Earliest vintage over the shortest chains to n, as bounds: hi = min over chains of the
+    // chain's latest possible year, lo = min over chains of its earliest possible year.
+    const bestV = n => {
+      if (memoV.has(n)) return memoV.get(n);
+      let r = dist.get(n) === 0 ? {lo: -Infinity, hi: -Infinity} : {lo: Infinity, hi: Infinity};
+      if (dist.get(n) !== 0)
+        for (const p of preds.get(n) || []) {
+          const bp = bestV(p),
+            ly = linkYears(L(p, n));
+          r = {lo: Math.min(r.lo, Math.max(bp.lo, ly.lo)), hi: Math.min(r.hi, Math.max(bp.hi, ly.hi))};
+        }
+      memoV.set(n, r);
+      return r;
+    };
+    const countC = n => {
+      // chains of people (BigInt: the count can be huge)
+      if (memoC.has(n)) return memoC.get(n);
+      let c = dist.get(n) === 0 ? 1n : 0n;
+      for (const p of preds.get(n) || []) c += countC(p);
+      memoC.set(n, c);
+      return c;
+    };
+    const countP = n => {
+      // paper-level chains: each link multiplies by its joint works
+      if (memoP.has(n)) return memoP.get(n);
+      let c = dist.get(n) === 0 ? 1n : 0n;
+      for (const p of preds.get(n) || []) c += countP(p) * BigInt(L(p, n).w);
+      memoP.set(n, c);
+      return c;
+    };
+    return {bestN, bestV, countC, countP};
+  };
+  const FA = side("A"),
+    FB = side("B");
+
+  let results = meets.map(m => {
+    const a = FA.bestN(m),
+      b = FB.bestN(m);
+    return {
+      d: a.d + b.d,
+      vint: Math.max(a.vint, b.vint),
+      vlo: Math.max(a.vlo, b.vlo),
+      v: {hi: Math.max(FA.bestV(m).hi, FB.bestV(m).hi), lo: Math.max(FA.bestV(m).lo, FB.bestV(m).lo)},
+      path: [...a.path, ...b.path.slice(0, -1).reverse()],
+      count: FA.countC(m) * FB.countC(m),
+      pcount: FA.countP(m) * FB.countP(m)
+    };
+  });
+  results.sort((a, b) => a.d - b.d || a.vint - b.vint);
+
+  const nPeopleChains = results.reduce((s, r) => s + r.count, 0n);
+  const nChains = results.reduce((s, r) => s + r.pcount, 0n);
+  const yr = x => (x === -Infinity || x === Infinity || x === null ? null : x);
+  // The pair's vintage lies between the smallest lower bound and the smallest upper bound over all
+  // shortest chains. It is reported only when the two agree; otherwise the upper bound (if any
+  // shortest chain is fully dated) is reported as "no later than", or the vintage is undetermined.
+  const vHi = results.length ? Math.min(...results.map(r => r.v.hi)) : Infinity,
+    vLo = results.length ? Math.min(...results.map(r => r.v.lo)) : Infinity;
+  const vKnown = results.length > 0 && D > 0 && isFinite(vHi) && vLo === vHi;
+  const vintage = vKnown ? vHi : null;
+  const vintageUpperBound = !vKnown && D > 0 && isFinite(vHi) ? vHi : null;
+  const vintageUndetermined = D > 0 && results.length > 0 && !vKnown && vintageUpperBound === null;
+  const newman = results.length ? results[0].d : null;
+
+  const paths = results.slice(0, 5).map(r => ({
+    ids: r.path,
+    people: r.path.map(x => names.get(x) || x),
+    newman: r.d,
+    vintage: r.vlo === r.vint ? yr(r.vint) : null,
+    vintageUpperBound: r.vlo !== r.vint ? yr(r.vint) : null,
+    steps: r.path.slice(1).map((v, i) => {
+      const u = r.path[i];
+      return {from: u, to: v, ...L(u, v)};
+    })
+  }));
+  // Every link that lies on at least one shortest chain, read off the two predecessor graphs
+  // (walking back from the meeting people towards each person) rather than from the few
+  // representative chains shown, so the CSV can mark all of them without enumerating the chains.
+  const chainEdges = [];
+  for (const s of SIDES) {
+    const {preds} = S[s];
+    const seenNode = new Set(meets),
+      stack = [...meets];
+    while (stack.length) {
+      const n = stack.pop();
+      for (const p of preds.get(n) || []) {
+        chainEdges.push({from: p, to: n, ...L(p, n)});
+        if (!seenNode.has(p)) {
+          seenNode.add(p);
+          stack.push(p);
+        }
+      }
+    }
+  }
+  const dij = D > 0 ? dijkstra(root.A, root.B, E) : null;
+  return {
+    cn: D,
+    newman,
+    vintage,
+    vintageUpperBound,
+    vintageUndetermined,
+    nChains,
+    nPeopleChains,
+    paths,
+    chainEdges,
+    explored: dij,
+    E,
+    names
+  };
+}
+
+// Lowest Newman distance between the two people over every link explored, of any length.
+function dijkstra(src, dst, E) {
+  const adj = new Map();
+  const add = (u, v, c) => {
+    if (!adj.has(u)) adj.set(u, []);
+    adj.get(u).push([v, c]);
+  };
+  for (const [e, ed] of E) {
+    const [u, v] = e.split("|");
+    const c = 1 / ed.nw;
+    add(u, v, c);
+    add(v, u, c);
+  }
+  const dist = new Map(),
+    prev = new Map(),
+    heap = [];
+  const push = (d, n) => {
+    heap.push([d, n]);
+    let i = heap.length - 1;
+    while (i) {
+      const p = (i - 1) >> 1;
+      if (heap[p][0] <= heap[i][0]) break;
+      [heap[p], heap[i]] = [heap[i], heap[p]];
+      i = p;
+    }
+  };
+  const pop = () => {
+    const t = heap[0],
+      l = heap.pop();
+    if (heap.length) {
+      heap[0] = l;
+      let i = 0;
+      for (;;) {
+        let a = 2 * i + 1,
+          b = a + 1,
+          m = i;
+        if (a < heap.length && heap[a][0] < heap[m][0]) m = a;
+        if (b < heap.length && heap[b][0] < heap[m][0]) m = b;
+        if (m === i) break;
+        [heap[m], heap[i]] = [heap[i], heap[m]];
+        i = m;
+      }
+    }
+    return t;
+  };
+  dist.set(src, 0);
+  push(0, src);
+  while (heap.length) {
+    const [d, n] = pop();
+    if (d > dist.get(n)) continue;
+    if (n === dst) break;
+    for (const [v, c] of adj.get(n) || []) {
+      const nd = d + c;
+      if (!dist.has(v) || nd < dist.get(v) - 1e-12) {
+        dist.set(v, nd);
+        prev.set(v, n);
+        push(nd, v);
+      }
+    }
+  }
+  if (!dist.has(dst)) return null;
+  const path = [dst];
+  while (prev.has(path[0])) path.unshift(prev.get(path[0]));
+  return {d: dist.get(dst), path};
+}
+
+// ------------------------------------------------------------------ UI
+// One picker per person. Each keeps its own candidates and ticks.
+const P = {};
+for (const s of SIDES)
+  P[s] = {selected: [], names: new Map(), orcid: new Map(), hits: null, query: null};
+let running = null,
+  lastResult = null;
+
+function opts() {
+  return {
+    count: $("count").value,
+    maxDepth: Math.max(1, +$("maxDepth").value || 6),
+    budget: +$("budget").value || 1500,
+    maxAuthors: +$("maxAuthors").value || 0,
+    inclOther: $("count").value === "openalex-all",
+    inclAbstracts: $("count").value === "openalex-all",
+    complete: true,
+    apiKey: $("apikey").value.trim()
+  };
+}
+// Every search finishes the step in which the two sides meet, so every shortest chain in the
+// graph built from the retrieved records is found; the numbers are exact only for that graph.
+// (OpenAlex replaced its e-mail "polite pool" with API keys in 2026 and ignores the mailto
+// parameter, so the page does not ask for an e-mail address or store anything locally.)
+
+const other = s => (s === "A" ? "B" : "A");
+function personName(s) {
+  const p = P[s];
+  return p.names.get(p.selected[0]) || p.selected[0] || "Person " + s;
+}
+
+async function search(s) {
+  for (const id of ["keyNote", "truncNote"]) {
+    const kn = $(id);
+    if (kn) {
+      kn.hidden = true;
+      kn.textContent = "";
+    }
+  }
+  const q = $("q" + s).value.trim();
+  if (!q) return;
+  $("opts").open = false; // fold Options away once a search starts
+  $("searchBtn" + s).disabled = true;
+  $("candList" + s).innerHTML = `<div class="hint">Searching OpenAlex…</div>`;
+  $("cands" + s).style.display = "block";
+  expandCands(s);
+  $("cands" + s).classList.remove("foldable");
+  if (P[other(s)].selected.length) collapseCands(other(s));
+  const o = opts();
+  const client = new Client({apiKey: o.apiKey, budget: 50});
+  const sel = "id,display_name,works_count,orcid,last_known_institutions,summary_stats";
+  try {
+    let hits;
+    const idm = q.match(/^(?:https?:\/\/openalex\.org\/(?:authors\/)?)?(A\d{6,})$/i);
+    const orc = q.match(/(\d{4}-\d{4}-\d{4}-\d{3}[\dX])/i);
+    if (idm) {
+      hits = [await client.get("/authors/" + idm[1].toUpperCase(), {select: sel})];
+    } else if (orc) {
+      hits = (await client.get("/authors", {filter: "orcid:" + orc[1], select: sel, "per-page": "10"})).results;
+    } else {
+      hits = (await client.get("/authors", {search: q, select: sel, "per-page": "12"})).results;
+    }
+    P[s].hits = hits || [];
+    // Ticks carry over only when the same query is run again; a different query starts from a
+    // fresh selection with its first candidate ticked.
+    if (q !== P[s].query) P[s].selected = [];
+    P[s].query = q;
+    renderCands(s, P[s].hits);
+  } catch (e) {
+    const f = describeFailure(e, "name search");
+    $("candList" + s).innerHTML = `<div class="err">The search stopped. ${esc(f.title)}</div>${failureBody(f)}`;
+  } finally {
+    $("searchBtn" + s).disabled = false;
+  }
+}
+
+function renderCands(s, hits) {
+  const p = P[s];
+  p.names.clear();
+  p.orcid.clear();
+  if (!hits.length) {
+    $("candList" + s).innerHTML =
+      `<div class="hint">No OpenAlex author found. Try another spelling, ` + `an ORCID, or an OpenAlex ID.</div>`;
+    $("tickAllRow" + s).style.display = "none";
+    p.selected = [];
+    updateSel(s);
+    return;
+  }
+  const prev = new Set(p.selected.filter(id => hits.some(h => sid(h.id) === id)));
+  $("candList" + s).innerHTML = hits
+    .map((h, i) => {
+      const id = sid(h.id),
+        orcid = sid(h.orcid || "");
+      p.names.set(id, h.display_name);
+      p.orcid.set(id, orcid || "");
+      const inst = (h.last_known_institutions || [])[0];
+      // The OpenAlex record (and ORCID) open in a new tab, so people can check that a record is really them.
+      const meta = [
+        esc(fmt(h.works_count || 0) + " works"),
+        inst && esc(inst.display_name),
+        orcid &&
+          `<a href="https://orcid.org/${esc(orcid)}" target="_blank" rel="noopener">ORCID ` + `${esc(orcid)}</a>`,
+        `<a class="oaLink" href="https://openalex.org/authors/${esc(id)}" ` +
+          `target="_blank" rel="noopener" title="Open this OpenAlex record ` +
+          `in a new tab">OpenAlex record ${esc(id)} ↗</a>`
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      const chk = prev.size ? prev.has(id) : i === 0;
+      return (
+        `<label class="cand"><input type="checkbox" value="${esc(id)}" ` +
+        `${chk ? "checked" : ""}>
+      <div><div class="nm">${esc(h.display_name)}<span class="otherBadge" data-id="${esc(id)}"></span></div><div ` +
+        `class="meta">${meta}</div></div></label>`
+      );
+    })
+    .join("");
+  $("candList" + s)
+    .querySelectorAll("input")
+    .forEach(c => c.addEventListener("change", () => updateSel(s)));
+  $("tickAllRow" + s).style.display = hits.length > 1 ? "flex" : "none";
+  updateSel(s);
+  foldCands(s, false);
+}
+// Records ticked for both people.
+function overlap() {
+  const a = new Set(P.A.selected);
+  return P.B.selected.filter(id => a.has(id));
+}
+function updateSel(s) {
+  if (s) {
+    const boxes = [...$("candList" + s).querySelectorAll("input[type=checkbox]")];
+    const ta = $("tickAll" + s);
+    if (ta) {
+      ta.checked = boxes.length > 0 && boxes.every(b => b.checked);
+      ta.indeterminate = !ta.checked && boxes.some(b => b.checked);
+    }
+    P[s].selected = [...$("candList" + s).querySelectorAll("input:checked")].map(c => c.value);
+  }
+  // A record ticked for the other person gets a badge in both lists.
+  for (const x of SIDES) {
+    const oth = new Set(P[other(x)].selected);
+    $("candList" + x)
+      .querySelectorAll(".otherBadge")
+      .forEach(b => {
+        b.innerHTML = oth.has(b.dataset.id) ? `<span class="badge a">ticked for Person ${other(x)}</span>` : "";
+      });
+    const n = P[x].selected.length;
+    $("candHint" + x).textContent = n > 1 ? `${n} records will be treated as one person.` : "";
+    candSummary(x);
+  }
+  const both = P.A.selected.length && P.B.selected.length;
+  $("runBtn").disabled = !both || !!running;
+  const ov = overlap();
+  $("runHint").textContent = !P.A.selected.length
+    ? "Find and tick Person A."
+    : !P.B.selected.length
+      ? "Find and tick Person B."
+      : ov.length
+        ? `The same OpenAlex record is ticked for both people, so they are one person: the Collabris number is 0.`
+        : `Ready: ${personName("A")} and ${personName("B")}.`;
+}
+
+const ui = {
+  layer(total, side, n, k) {
+    $("sLayer").textContent = total;
+    $("statusText").textContent =
+      `Step ${total}: widening Person ${side}'s side to ${k} step${k === 1 ? "" : "s"} - ` +
+      `scanning the works of ${fmt(n)} ${n === 1 ? "person" : "people"}…`;
+    this.log(`Step ${total}: Person ${side}'s side, expanding ${fmt(n)} ${n === 1 ? "person" : "people"}.`);
+  },
+  progress(p, w, r) {
+    $("sPeople").textContent = fmt(p);
+    $("sWorks").textContent = fmt(w);
+    $("sReq").textContent = fmt(r);
+  },
+  log(s) {
+    const l = $("log");
+    l.textContent += s + "\n";
+    l.scrollTop = l.scrollHeight;
+  }
+};
+
+// Queries that returned fewer works than OpenAlex reported for them, summed up; null when none did.
+function summarizeIncomplete(list) {
+  if (!list || !list.length) return null;
+  const expected = list.reduce((t, x) => t + x.expected, 0),
+    read = list.reduce((t, x) => t + x.read, 0);
+  return {queries: list.length, expected, read, missing: expected - read};
+}
+// ORCID check: the search is repeated with OpenAlex records that share an ORCID merged into one
+// person. It only reports; the numbers shown come from the first search. It is skipped for a CN
+// of 0, searches no deeper than the first search's CN, and gets its own request allowance equal
+// to the budget.
+async function orcidCheck(client, seedsIn, o, res, nMain = 0) {
+  if (res.cn !== null && res.cn === 0) return null;
+  $("statusText").textContent = "Checking OpenAlex records that share an ORCID…";
+  ui.log("ORCID check: repeating the search with author records that share " + "an ORCID taken as one person.");
+  client.budget = client.attempted + o.budget;
+  const o2 = {...o, orcidMerge: true, maxDepth: res.cn === null ? o.maxDepth : res.cn};
+  const r0 = client.requests;
+  let m,
+    rebuilds = 0;
+  const ident = new Identities(); // identities learnt so far, kept across rebuilds
+  try {
+    for (;;) {
+      m = await computeCN(client, seedsIn, {...o2, ident, noRestart: rebuilds >= MAX_REBUILDS}, ui);
+      if (!m.restart) break;
+      rebuilds++;
+      ui.log(
+        `ORCID check: a shared ORCID shows that two people already in the network are one person; ` +
+          `searching again with the records merged (rebuild ${rebuilds} of at most ${MAX_REBUILDS}).`
+      );
+    }
+  } catch (e) {
+    if (e.name === "AbortError" || e.message === "budget") {
+      ui.log(
+        `ORCID check not completed (` + String(e.name === "AbortError" ? "stopped" : "request allowance used up") + `).`
+      );
+      return {done: false, reason: e.name === "AbortError" ? "stopped" : "budget"};
+    }
+    // Any other failure (OpenAlex limit, network, server error) ends the check only: the main
+    // result is already complete and is kept, with the reason the check stopped.
+    const f = describeFailure(e, "ORCID check");
+    ui.log(`ORCID check not completed: ${f.title} ${f.what}`);
+    return {done: false, reason: "error", error: f};
+  }
+  const better = m.cn !== null && (res.cn === null || m.cn < res.cn);
+  const same = m.cn !== null && m.cn === res.cn;
+  const lowerN = same && m.newman !== null && res.newman !== null && m.newman < res.newman - 1e-9;
+  const earlierV = same && m.vintage !== null && res.vintage !== null && m.vintage < res.vintage;
+  const onPaths = new Map();
+  for (const p of m.paths || [])
+    for (const x of p.ids)
+      if (m.merged && m.merged.has(x)) onPaths.set(x, {name: m.names.get(x) || x, records: m.merged.get(x)});
+  const out = {
+    done: true,
+    rebuilds,
+    // Still found two graph nodes for one person after the last allowed rebuild: the merged
+    // result may be too high.
+    approximate: !!m.identityConflict,
+    incomplete: summarizeIncomplete((client.incomplete || []).slice(nMain)),
+    requests: client.requests - r0,
+    cn: m.cn,
+    newman: m.newman ?? null,
+    vintage: m.vintage ?? null,
+    nPeopleChains: m.nPeopleChains ?? null,
+    differs: better || lowerN || earlierV,
+    lowerCn: better,
+    lowerNewman: lowerN,
+    earlierVintage: earlierV,
+    merged: Object.fromEntries([...onPaths].map(([k, v]) => [k, v])),
+    path: m.paths && m.paths[0] ? {people: m.paths[0].people, newman: m.paths[0].newman} : null
+  };
+  ui.log(
+    out.differs
+      ? `ORCID check: with merges the result would be CN ${m.cn}, ` + `Newman distance ${nfmt(m.newman)}.`
+      : "ORCID check: merging records that share an ORCID changes nothing."
+  );
+  return out;
+}
+
+async function run() {
+  {
+    const tn = $("truncNote");
+    if (tn) {
+      tn.hidden = true;
+      tn.textContent = "";
+    }
+  }
+  if (!P.A.selected.length || !P.B.selected.length || running) return;
+  $("opts").open = false; // fold Options away once a calculation starts
+  const o = opts();
+  const ctrl = new AbortController();
+  running = ctrl;
+  const client = new Client({
+    apiKey: o.apiKey,
+    budget: o.budget,
+    signal: ctrl.signal
+  });
+  const people = {};
+  const seedsIn = {};
+  for (const s of SIDES) {
+    people[s] = {name: personName(s), ids: [...P[s].selected]};
+    seedsIn[s] = {name: people[s].name, ids: [...P[s].selected], orcids: P[s].selected.map(x => P[s].orcid.get(x) || "")};
+    collapseCands(s);
+  }
+  $("status").style.display = "block";
+  $("result").style.display = "none";
+  $("bar").style.display = "block";
+  $("stopBtn").style.display = "";
+  $("log").textContent = "";
+  ui.progress(2, 0, 0);
+  $("sLayer").textContent = "0";
+  $("statusText").textContent = "Starting…";
+  showRunAdvice(o);
+  $("runBtn").disabled = true;
+  for (const s of SIDES) $("searchBtn" + s).disabled = true;
+  for (const s of SIDES) ui.log(`Person ${s}: ${people[s].name} [${people[s].ids.join(", ")}]`);
+  ui.log(`Definition: ${DEFS[o.count]}. Two-way search, giving up beyond CN = ${o.maxDepth}.`);
+  const t0 = performance.now();
+  try {
+    const res = await computeCN(client, seedsIn, o, ui);
+    const nMain = (client.incomplete || []).length;
+    res.incomplete = summarizeIncomplete((client.incomplete || []).slice(0, nMain));
+    res.orcidCheck = await orcidCheck(client, seedsIn, o, res, nMain);
+    res.people = people;
+    res.requests = client.requests;
+    res.fullAuthorLists = client.fullAuthorLists ? client.fullAuthorLists.size : 0;
+    res.seconds = (performance.now() - t0) / 1000;
+    res.computedAt = new Date();
+    res.definition = o.count;
+    res.maxAuthors = o.maxAuthors;
+    res.workTypes = {non_publication_records: o.inclOther, likely_meeting_abstracts: o.inclAbstracts};
+    lastResult = res;
+    $("statusText").textContent = `Finished in ${res.seconds.toFixed(1)} s · ${whenText(res.computedAt)}`;
+    renderResult(res, o);
+  } catch (e) {
+    if (e.name === "AbortError") $("statusText").innerHTML = `Stopped.`;
+    else if (e.message === "budget")
+      $("statusText").innerHTML =
+        `<span class="err">Request budget of ${fmt(o.budget)} used up.</span> ` +
+        `Raise it under Options and run again — replies already fetched ` +
+        `in this tab are reused. Two well-connected people four or more ` +
+        `steps apart can need several thousand requests; “Skip works ` +
+        `with more than N authors” reduces this.`;
+    else {
+      const f = describeFailure(e, "main search");
+      ui.log(`Stopped: ${f.title} ${f.what}`);
+      if (f.keyButton && $("runAdvice")) $("runAdvice").hidden = true; // the message already says it
+      $("statusText").innerHTML = `<span class="err">The calculation stopped. ${esc(f.title)}</span>${failureBody(f)}`;
+    }
+  } finally {
+    running = null;
+    $("bar").style.display = "none";
+    $("stopBtn").style.display = "none";
+    updateSel();
+    for (const s of SIDES) $("searchBtn" + s).disabled = false;
+    ui.progress(
+      $("sPeople").textContent.replace(/\D/g, "") || 0,
+      $("sWorks").textContent.replace(/\D/g, "") || 0,
+      client.requests
+    );
+  }
+}
+
+// ------------------------------------------------------------------ Failures, explained
+// An OpenAlex request that failed for good (after the retries) carries what is needed to say
+// in plain words what stopped, why, and what to do: the kind of failure, the HTTP status, the
+// request, OpenAlex's own message and the number of attempts.
+// OpenAlex's usage headers (sent with every response; readable only if OpenAlex exposes them to
+// pages, which is why everything below also works without them). Remaining is today's allowance
+// in credits; a list request costs 1 credit and a name search 10. Reset is seconds until the
+// allowance refills at midnight UTC.
+let rateSeen = null; // the most recent usage figures OpenAlex reported in this tab
+function rateInfo(headers, url) {
+  const num = h => {
+    const v = headers && headers.get ? headers.get(h) : null;
+    return v === null || v === "" || !isFinite(+v) ? null : +v;
+  };
+  const remaining = num("X-RateLimit-Remaining"),
+    limit = num("X-RateLimit-Limit"),
+    resetSeconds = num("X-RateLimit-Reset");
+  if (remaining === null && resetSeconds === null) return null;
+  const cost = /[?&]search=/.test(url || "") ? 10 : 1;
+  return {remaining, limit, resetSeconds, exhausted: remaining !== null && remaining < cost};
+}
+function oaError(kind, status, url, detail, tries, keyUsed) {
+  const label = {
+    rate: "OpenAlex usage limit reached",
+    server: "OpenAlex server error",
+    network: "OpenAlex could not be reached",
+    http: "OpenAlex rejected a request",
+    keyInactive: "OpenAlex API key not activated"
+  }[kind];
+  const e = new Error(label + (status ? ` (HTTP ${status})` : ""));
+  let path = "",
+    q = new URLSearchParams();
+  try {
+    const u = new URL(url);
+    path = u.pathname;
+    q = u.searchParams;
+    q.delete("api_key");
+    q.delete("mailto");
+  } catch (_) {}
+  e.oa = {
+    kind,
+    status,
+    path,
+    query: q.toString(),
+    detail: String(detail || "")
+      .replace(/\s+/g, " ")
+      .trim(),
+    tries,
+    keyUsed
+  };
+  return e;
+}
+// Which request it was, in words: "reading the works of 50 people (page 3)".
+function requestInWords(oa) {
+  const q = new URLSearchParams(oa.query || ""),
+    f = q.get("filter") || "",
+    parts = [];
+  const vals = k => {
+    const m = f.split(",").find(x => x.startsWith(k + ":"));
+    return m ? m.slice(k.length + 1).split("|").length : 0;
+  };
+  if (oa.path === "/works") {
+    if (vals("author.id"))
+      parts.push(
+        `reading the works of ${vals("author.id")} OpenAlex author record${vals("author.id") === 1 ? "" : "s"}`
+      );
+    else if (vals("author.orcid"))
+      parts.push(`reading the works found under ${vals("author.orcid")} ORCID${vals("author.orcid") === 1 ? "" : "s"}`);
+    else parts.push("reading works");
+    const y0 = /from_publication_date:(\d{4})/.exec(f),
+      y1 = /to_publication_date:(\d{4})/.exec(f);
+    if (y0 && y1) parts.push(`published ${y0[1]}–${y1[1]}`);
+  } else if (oa.path === "/authors") {
+    if (vals("orcid"))
+      parts.push(
+        `looking up which OpenAlex author records carry ${vals("orcid")} ` + `ORCID${vals("orcid") === 1 ? "" : "s"}`
+      );
+    else if (q.get("search")) parts.push(`searching OpenAlex for the name “${q.get("search")}”`);
+    else parts.push("looking up OpenAlex author records");
+  } else parts.push(`requesting ${oa.path || "OpenAlex"}`);
+  if (q.get("page") && q.get("page") !== "1") parts.push(`page ${q.get("page")}`);
+  if (q.get("cursor") && q.get("cursor") !== "*") parts.push("a later page");
+  return parts.join(", ");
+}
+// When OpenAlex's daily allowance refills: midnight UTC, or `seconds` from now when OpenAlex said so.
+function resetTimeText(seconds) {
+  const n = new Date(),
+    r =
+      typeof seconds === "number" && seconds >= 0
+        ? new Date(n.getTime() + seconds * 1000)
+        : new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1));
+  const h = Math.round((r - n) / 3.6e6);
+  const given = typeof seconds === "number" && seconds >= 0;
+  const t = r.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}),
+    when = h < 1 ? "within the hour" : `about ${h} h from now`;
+  return given ? `${t} your time (${when})` : `midnight UTC (${t} your time, ${when})`;
+}
+// {title, why, todo, what}: plain text, escaped where it is shown.
+function describeFailure(e, phase) {
+  const oa = e && e.oa;
+  const step = phase === "name search" ? "" : ($("sLayer") && $("sLayer").textContent.trim()) || "";
+  const what = oa
+    ? `What failed: ${requestInWords(oa)}, during the ${phase}` +
+      String(step && step !== "0" ? ` at step ${step}` : "") +
+      String(oa.tries ? `, after ${oa.tries} attempt${oa.tries === 1 ? "" : "s"}` : "") +
+      `.`
+    : `What failed: the ${phase}` + String(step && step !== "0" ? ` at step ${step}` : "") + `.`;
+  const reused =
+    "Replies already received in this tab are kept, so running the " + "calculation again later does not repeat them.";
+  if (!oa)
+    return {
+      title: "An unexpected error occurred in the page.",
+      why: `The browser reported: ${e && e.message ? e.message : String(e)}.`,
+      todo: "Please report it with “Report a bug”, saying whom you searched for.",
+      what
+    };
+  if (oa.kind === "rate") {
+    const detail = oa.detail
+      ? `OpenAlex’s message: “${oa.detail}” (HTTP 429).`
+      : "OpenAlex’s answer: HTTP 429, Too Many Requests.";
+    const left =
+      oa.remaining !== null && oa.remaining !== undefined
+        ? ` OpenAlex reports ${fmt(oa.remaining)} credits left today.`
+        : "";
+    if (oa.exhausted && !oa.keyUsed)
+      return {
+        title: "The free daily OpenAlex allowance for your network is used up.",
+        why:
+          "Without an API key, OpenAlex gives $0.10 of requests a day, " +
+          "shared by everyone on " +
+          ("the same network address (a whole university, or conference " + "wifi): about 1,000 of the ") +
+          ("lookups this calculator makes, or 100 name searches, which cost " + "ten times as much. ") +
+          "Nothing is wrong with the calculator or with your search." +
+          left,
+        todo:
+          `The allowance resets at ${resetTimeText(oa.resetSeconds)}. A ` +
+          `free personal OpenAlex API ` +
+          (`key gives you $1 a day of your own: get one at openalex.org/settings/api ` + `and paste `) +
+          `it under Options. ${reused}`,
+        what,
+        detail,
+        keyButton: true
+      };
+    if (oa.exhausted)
+      return {
+        title: "The daily allowance of your OpenAlex API key is used up.",
+        why:
+          "A free OpenAlex API key gives $1 of requests a day (about 10,000 " +
+          "of the lookups this " +
+          "calculator makes), and today’s has been spent." +
+          left,
+        todo: `It resets at ${resetTimeText(oa.resetSeconds)}. ${reused}`,
+        what,
+        detail
+      };
+    if (oa.remaining !== null && oa.remaining !== undefined)
+      return {
+        title: "OpenAlex kept asking the calculator to slow down.",
+        why:
+          "OpenAlex limits how many requests may be sent per second, and " +
+          "it kept refusing them " +
+          "for about a minute although today’s allowance is not used up." +
+          left,
+        todo: `Wait a minute and run the calculation again. ${reused}`,
+        what,
+        detail
+      };
+    // OpenAlex did not say which limit it was (its usage headers could not be read).
+    return {
+      title: "OpenAlex has stopped answering for now because a usage limit " + "was reached.",
+      why: oa.keyUsed
+        ? "The calculator waited and retried for about a minute without " +
+          "success. Most likely " +
+          "the daily allowance of your API key ($1 a day) is used up."
+        : "The calculator waited and retried for about a minute without " +
+          "success. Most likely " +
+          ("the free daily allowance for your network is used up: without " + "an API key, OpenAlex ") +
+          ("gives $0.10 of requests a day, shared by everyone on the same " + "network address (a whole ") +
+          ("university, or conference wifi), about 1,000 lookups or 100 " + "name searches. Nothing is ") +
+          "wrong with the calculator or with your search.",
+      todo:
+        `The allowance resets at ${resetTimeText()}. ` +
+        String(
+          oa.keyUsed
+            ? ""
+            : "A free personal OpenAlex API key gives you $1 a day of your " +
+                "own: get one at " +
+                "openalex.org/settings/api and paste it under Options. "
+        ) +
+        `${reused}`,
+      what,
+      detail,
+      keyButton: !oa.keyUsed
+    };
+  }
+  if (oa.kind === "keyInactive")
+    return {
+      title: "Your OpenAlex API key has not been activated yet.",
+      why: "OpenAlex refuses requests made with a key until the key is activated.",
+      todo:
+        "Open the e-mail OpenAlex sent when you created the key and click " +
+        "its activation link, " +
+        ("then run the calculation again. To calculate now without the " + "key, clear the API key ") +
+        "field under Options.",
+      what,
+      detail: oa.detail ? `OpenAlex’s message: “${oa.detail}” (HTTP 403).` : "",
+      keyButton: true,
+      keyButtonText: "Open the API key field"
+    };
+  if (oa.kind === "network")
+    return {
+      title: "OpenAlex could not be reached.",
+      why:
+        "The browser got no answer from api.openalex.org, even after " +
+        "retrying for about a minute. Usually the internet connection " +
+        "dropped, or a firewall, proxy or browser extension blocked the " +
+        "request.",
+      todo: `Check the connection and run the calculation again. ${reused}`,
+      what,
+      detail: oa.detail ? `Browser message: “${oa.detail}”.` : ""
+    };
+  if (oa.kind === "server")
+    return {
+      title: "OpenAlex had a server problem.",
+      why:
+        `OpenAlex answered with a server error (HTTP ${oa.status}) and ` +
+        `kept doing so for about a minute. This is a problem on OpenAlex’s ` +
+        `side and is usually temporary.`,
+      todo: `Try again in a few minutes. ${reused}`,
+      what,
+      detail: oa.detail ? `OpenAlex’s message: “${oa.detail}”.` : ""
+    };
+  return {
+    title: `OpenAlex rejected a request (HTTP ${oa.status}).`,
+    why:
+      oa.status === 403
+        ? "OpenAlex refused access. If an API key is entered under Options, " +
+          "check that it is valid at openalex.org/settings/api."
+        : "OpenAlex considered the request invalid. This is most likely " +
+          "a problem in the calculator, not in what you searched for.",
+    todo: "Please report it with “Report a bug” and include the text of " + "this message.",
+    what,
+    detail: oa.detail ? `OpenAlex’s message: “${oa.detail}”.` : ""
+  };
+}
+function failureBody(f) {
+  const link = t =>
+    esc(t).replace(
+      /openalex\.org\/settings\/api(-key)?/g,
+      m => `<a href="https://${m}" target="_blank" rel="noopener">${m}</a>`
+    );
+  return (
+    `<div class="fbody">${link(f.why)}</div><div class="fbody">${link(f.todo)}</div>` +
+    String(
+      f.keyButton
+        ? `<div class="u-mt8"><button type="button" class="toggle openKey">` +
+            (String(esc(f.keyButtonText || "Add an API key under Options")) + `</button></div>`)
+        : ""
+    ) +
+    `<div class="hint fbody">${esc(f.what)}${f.detail ? " " + esc(f.detail) : ""}</div>`
+  );
+}
+function orcidCheckHtml(res) {
+  const c = res.orcidCheck;
+  if (!c) return "";
+  if (!c.done && c.reason === "error")
+    return (
+      `<div class="note"><b>ORCID check not completed: ${esc(c.error.title)}</b> ` +
+      `The numbers above are complete; only the extra check stopped, ` +
+      `so it is not known whether OpenAlex records that share an ORCID ` +
+      `would lower them.${failureBody(c.error)}</div>`
+    );
+  if (!c.done)
+    return (
+      `<div class="note">ORCID check not completed (` +
+      String(c.reason === "stopped" ? "stopped" : "request allowance used up") +
+      `): it is not known whether OpenAlex records that share an ORCID ` +
+      `would lower these numbers.</div>`
+    );
+  // The check is a diagnostic: it is never used for the reported numbers.
+  const approx = c.approximate
+    ? ` After ${c.rebuilds} rebuilds the merged search still found ORCIDs joining people already in the ` +
+      `network, so this check is approximate (its numbers could still be too high).`
+    : "";
+  if (!c.differs && c.incomplete)
+    return (
+      `<div class="note">ORCID check incomplete: OpenAlex returned ` +
+      `fewer works than it reported ` +
+      (`(${fmt(c.incomplete.missing)} missing), so it is not known whether ` + `OpenAlex records that `) +
+      `share an ORCID would lower these numbers.${approx}</div>`
+    );
+  if (!c.differs)
+    return (
+      `<p class="hint">ORCID check (diagnostic): treating OpenAlex records that ` +
+      `share an ORCID as one person would not change these numbers.${approx}</p>`
+    );
+  const parts = [];
+  if (c.lowerCn)
+    parts.push(`the CN would be <b>${c.cn}</b> instead of ` + String(res.cn === null ? "not found" : res.cn));
+  else {
+    if (c.lowerNewman)
+      parts.push(`the Newman distance would be <b>${nfmt(c.newman)}</b> instead ` + `of ${nfmt(res.newman)}`);
+    if (c.earlierVintage) parts.push(`the vintage would be <b>${c.vintage}</b> instead of ${res.vintage}`);
+  }
+  if (c.lowerCn && c.newman !== null) parts.push(`with a Newman distance of ${nfmt(c.newman)}`);
+  const ppl = Object.entries(c.merged || {})
+    .map(
+      ([, v]) =>
+        `<li>${esc(v.name)}: ` +
+        String(
+          v.records
+            .map(
+              r =>
+                `<a href="https://openalex.org/authors/${esc(r)}" target="_blank" ` + `rel="noopener">${esc(r)} ↗</a>`
+            )
+            .join(", ")
+        ) +
+        `</li>`
+    )
+    .join("");
+  return (
+    `<div class="more"><b>ORCID check (diagnostic).</b> OpenAlex holds some people ` +
+    `in this network under more than one author record with the same ` +
+    `ORCID. If those records are one person, ${parts.join(", ")}. ` +
+    String(c.path ? `Closest chain with the merges: ${c.path.people.map(esc).join(" → ")}. ` : "") +
+    String(ppl ? `Records to check:<ul class="mergeList">${ppl}</ul>` : "") +
+    `The numbers above do not use these merges, because OpenAlex ` +
+    `sometimes attaches an ORCID to the wrong person's record, which ` +
+    `would merge two people and make the numbers too low.${approx}</div>`
+  );
+}
+let mergedNow = null; // records merged by ORCID in the result being shown
+function personLink(id, name) {
+  const recs = mergedNow && mergedNow.get(id);
+  const extra =
+    recs && recs.length > 1
+      ? `<div class="sub">one person held as ${recs.length} OpenAlex ` +
+        `records with the same ORCID: ` +
+        String(
+          recs
+            .map(
+              r => `<a href="https://openalex.org/authors/${esc(r)}" target="_blank" ` + `rel="noopener">${esc(r)}</a>`
+            )
+            .join(", ")
+        ) +
+        `</div>`
+      : "";
+  return (
+    `<a href="https://openalex.org/authors/${esc(id)}" target="_blank" ` + `rel="noopener">${esc(name)}</a>${extra}`
+  );
+}
+// A DOI from OpenAlex is linked only when it is an https:// address; anything else falls back to
+// the work's OpenAlex page.
+const safeDoi = d => (typeof d === "string" && /^https:\/\//i.test(d) ? d : "");
+function workLink(w) {
+  const href = safeDoi(w.doi) || `https://openalex.org/works/${w.id}`;
+  const t = w.title.length > 140 ? w.title.slice(0, 137) + "…" : w.title;
+  return (
+    `<li>${esc(w.year || "")} · <a href="${esc(href)}" target="_blank" ` + `rel="noopener">${esc(t || w.id)}</a></li>`
+  );
+}
+
+// Local date and time of a computation, with the time zone, e.g. "5 Oct 2026, 16:42 CDT".
+const whenText = d =>
+  d
+    ? d.toLocaleString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short"
+      })
+    : "";
+const nfmt = x => (x === null || x === undefined ? "–" : x < 10 ? x.toFixed(2) : x.toFixed(1));
+// As soon as a search has returned candidates, the list can be folded into one line naming who is
+// ticked, so the page does not have to be scrolled past it to reach the other person or Calculate.
+// When a calculation starts, both lists fold automatically; either can be reopened to change the choice.
+function foldCands(s, collapse) {
+  const box = $("cands" + s);
+  if (!box || box.style.display !== "block") return;
+  const n = $("candList" + s).querySelectorAll("input[type=checkbox]").length;
+  if (!n) {
+    box.classList.remove("foldable", "collapsed");
+    return;
+  }
+  box.classList.add("foldable");
+  if (collapse) box.classList.add("collapsed");
+  candSummary(s);
+}
+function candSummary(s) {
+  const box = $("cands" + s);
+  if (!box || !box.classList.contains("foldable")) return;
+  const n = $("candList" + s).querySelectorAll("input[type=checkbox]").length;
+  const k = P[s].selected.length;
+  const recs = k > 1 ? ` (${k} OpenAlex records)` : "";
+  const who = k ? `<b>${esc(personName(s))}</b>${recs}` : `<i>no record ticked yet</i>`;
+  const cnt = `${n} candidate${n === 1 ? "" : "s"}`;
+  $("candSummary" + s).innerHTML =
+    `<span>Person ${s}: ${who}.</span>` +
+    `<button type="button" class="toggle" id="candShow${s}" aria-controls="candList${s}" data-n="${esc(cnt)}"></button>`;
+  $("candShow" + s).addEventListener("click", () =>
+    box.classList.contains("collapsed") ? expandCands(s) : hideCands(s)
+  );
+  syncCandBtn(s);
+}
+function collapseCands(s) {
+  foldCands(s, true);
+}
+// The candidates button is two-state: pressed while the list is open, raised while it is hidden.
+function syncCandBtn(s) {
+  const box = $("cands" + s),
+    b = $("candShow" + s);
+  if (!box || !b) return;
+  const open = !box.classList.contains("collapsed");
+  b.setAttribute("aria-pressed", String(open));
+  b.setAttribute("aria-expanded", String(open));
+  b.textContent = (open ? "Hide the " : "Show the ") + (b.dataset.n || "candidates");
+}
+function expandCands(s) {
+  const box = $("cands" + s);
+  if (box) box.classList.remove("collapsed");
+  syncCandBtn(s);
+}
+function hideCands(s) {
+  const box = $("cands" + s);
+  if (box && box.classList.contains("foldable")) box.classList.add("collapsed");
+  syncCandBtn(s);
+}
+// Said whenever OpenAlex returned fewer works than it reported for some query, so the result
+// cannot be taken as definitive.
+function incompleteNote(inc, n) {
+  if (!inc) return "";
+  return (
+    `<div class="note"><b>The search was incomplete.</b> For ${fmt(inc.queries)} ` +
+    `OpenAlex ` +
+    (`quer${inc.queries === 1 ? "y" : "ies"}, fewer works came back ` + `than OpenAlex reported `) +
+    (`(${fmt(inc.read)} of ${fmt(inc.expected)}; ${fmt(inc.missing)} ` + `missing). Missing works can `) +
+    `only add links, so ` +
+    String(
+      n === null
+        ? "a chain between the two may exist among them."
+        : `the true CN may be lower than ${n}, the Newman distance and ` +
+            `vintage may be ` +
+            `lower too, and the chain counts are minimums.`
+    ) +
+    (` Running the calculation again may complete it (replies already ` + `received in this tab are `) +
+    `reused)` +
+    String(rateSeen && !rateSeen.keyUsed ? "; a free API key under Options also helps." : ".") +
+    `</div>`
+  );
+}
+const pairTitle = res =>
+  `<h2 class="heroName">${esc(res.people.A.name)}<span class="amp">↔</span>${esc(res.people.B.name)}</h2>`;
+function renderResult(res, o) {
+  mergedNow = res.merged || null;
+  const el = $("result");
+  el.style.display = "block";
+  const defLine = `<p class="hint u-mt4">Definition: ${esc(DEFS[o.count])}</p>`;
+  const inc = res.incomplete || null;
+  if (res.cn === null) {
+    el.innerHTML =
+      pairTitle(res) +
+      `<div class="hero"><div class="num u-ink3"><span class="lbl">CN ` +
+      `=</span>${res.exhausted && !inc && !o.maxAuthors ? "∞" : "?"}</div><div><h3 class="noChain">` +
+      String(inc ? "No chain found in the works that could be read" : "No chain found") +
+      `</h3>
+      <p>${esc(res.reason)} ` +
+      String(
+        inc
+          ? "Because the search was incomplete, a chain may exist all the same, " +
+              "and the true CN may be lower than this limit."
+          : res.exhausted
+            ? "Check that the right OpenAlex record(s) were ticked for both people."
+            : "Raise the limit under Options, or check that the right OpenAlex " + "record(s) were selected."
+      ) +
+      `</p>${defLine}<p class="hint u-mt2">${fmt(res.requests)} OpenAlex request${res.requests === 1 ? "" : "s"} ` +
+      `· ${res.seconds.toFixed(1)} s · ${esc(whenText(res.computedAt))}</p></div></div>` +
+      incompleteNote(inc, null) +
+      orcidCheckHtml(res) +
+      downloads();
+    bindDownloads();
+    return;
+  }
+  const n = res.cn;
+  const A = esc(res.people.A.name),
+    B = esc(res.people.B.name);
+  const phrase =
+    n === 0
+      ? `${A} and ${B} are the same person: the same OpenAlex record was ticked for both.`
+      : n === 1
+        ? `${A} and ${B} published together.`
+        : inc
+          ? `At most ${n} co-authorship steps apart: the search was incomplete.`
+          : `${n} co-authorship steps apart.`;
+  // An incomplete search (works OpenAlex reported but did not return) can only have missed
+  // links: the CN, Newman distance and vintage found are upper bounds, the counts minimums.
+  const partial = n > 1 && !!inc;
+  let html =
+    pairTitle(res) +
+    `<div class="hero"><div ` +
+    `class="num" aria-label="CN ${partial ? "at most" : "="} ${n}"><span class="lbl">CN ` +
+    `${partial ? "≤" : "="}</span>${n}</div><div><p>${phrase}</p>${defLine}` +
+    `<p class="hint u-mt2">${fmt(res.requests)} OpenAlex request${res.requests === 1 ? "" : "s"} ` +
+    `· ${res.seconds.toFixed(1)} s · ${esc(whenText(res.computedAt))}` +
+    String(
+      res.depths && n > 0
+        ? ` · searched ${res.depths.A} step${res.depths.A === 1 ? "" : "s"} from A and ` +
+            `${res.depths.B} from B`
+        : ""
+    ) +
+    `</p></div></div>` +
+    String(partial ? incompleteNote(inc, n) : "");
+  if (n > 0) {
+    html +=
+      `<div class="metrics">
+      <div class="metric"><div class="k">Newman ` +
+      `distance</div><div class="v">${partial ? "≤ " : ""}${nfmt(res.newman)}</div><div ` +
+      `class="ks">minimum among the shortest (${n}-step) chains</div>
+        <div class="d">Sum ` +
+      `of 1/strength along the closest ${n}-step chain. Lower = closer.</div></div>
+      <div class="metric"><div class="k">Vintage</div><div class="v">${
+        res.vintage !== null && res.vintage !== undefined
+          ? (partial ? "≤ " : "") + esc(res.vintage)
+          : res.vintageUpperBound !== null && res.vintageUpperBound !== undefined
+            ? "≤ " + esc(res.vintageUpperBound)
+            : "–"
+      }</div>
+        <div class="d">First year a ${n}-step chain between them existed.${
+          res.vintage === null && res.vintageUpperBound !== null && res.vintageUpperBound !== undefined
+            ? " Some links have joint works without a publication year, so only an upper bound is known."
+            : res.vintageUndetermined
+              ? " Undetermined: every shortest chain has a link whose joint works have no publication year."
+              : ""
+        }</div></div>
+      ` +
+      String(
+        n === 1
+          ? `<div class="metric"><div class="k">Joint publications</div><div ` +
+              `class="v">${fmt(res.nChains)}</div>
+        <div class="d">Works the two share in OpenAlex. More = more robustly ` +
+              `connected.</div></div>`
+          : `<div class="metric"><div class="k">Chains of people</div><div ` +
+              `class="v">${partial ? "≥ " : ""}${fmt(res.nPeopleChains)}</div>
+        <div class="d">Different ${n}-step sequences of co-authors ` +
+              `between them. Distinct sequences can share people or links, ` +
+              `so they are not necessarily independent routes.</div></div>
+      <div class="metric"><div class="k">Paper routes</div><div ` +
+              `class="v">${partial ? "≥ " : ""}${fmt(res.nChains)}</div>
+        <div class="d">The same chains counted paper by paper: ` +
+              `each link multiplies by its joint works.</div></div>`
+      ) +
+      `
+    </div>`;
+    if (res.explored && res.explored.d < res.newman - 1e-9 && res.explored.path.length - 1 > n) {
+      html +=
+        `<div class="more">A longer chain through stronger ties gives ` +
+        `an even lower Newman distance of ${nfmt(res.explored.d)} ` +
+        `(${res.explored.path.length - 1} steps: ` +
+        String(res.explored.path.map(x => esc(res.names.get(x) || x)).join(" → ")) +
+        `). This is only among the people explored; the unrestricted ` +
+        `minimum could be lower still.</div>`;
+    }
+  }
+  html += orcidCheckHtml(res);
+  if (res.paths.length && n > 0) {
+    const nShown = res.paths.length;
+    html +=
+      `<div class="chainsbox"><div class="chainsHead"><button type="button" ` +
+      `id="chainsBtn" class="toggle" aria-pressed="false" aria-expanded="false" ` +
+      `aria-controls="chainsPanel">Show results</button>
+      <span ` +
+      `class="hint">` +
+      String(
+        nShown === 1 ? "The shortest chain, link by link" : `The ${nShown} closest shortest chains, link by link`
+      ) +
+      `</span></div><div id="chainsPanel" hidden>`;
+    res.paths.forEach((p, i) => {
+      html +=
+        `<div class="path"><h3>` +
+        String(res.paths.length > 1 ? `Chain ${i + 1}` : "Chain") +
+        ` · Newman distance ${nfmt(p.newman)}` +
+        String(
+          p.vintage
+            ? ` · complete since ${esc(p.vintage)}`
+            : p.vintageUpperBound
+              ? ` · complete by ${esc(p.vintageUpperBound)} at the latest`
+              : n > 0
+                ? " · year undetermined"
+                : ""
+        ) +
+        `</h3><ol class="chain">`;
+      p.ids.forEach((id, j) => {
+        const first = j === 0,
+          last = j === p.ids.length - 1;
+        html +=
+          `<li class="person${first || last ? " end" : ""}"><div class="dot">${first ? "A" : last ? "B" : j}</div>
+        <div><div class="pn">${personLink(id, p.people[j])}</div>` +
+          String(first ? `<div class="sub">Person A</div>` : last ? `<div class="sub">Person B</div>` : "") +
+          `</div></li>`;
+        if (j < p.steps.length) {
+          const s = p.steps[j];
+          html +=
+            `<li class="link"><span class="w">${s.w} joint work${s.w > 1 ? "s" : ""}</span> ` +
+            `· strength ${nfmt(s.nw)}` +
+            String(
+              s.fy
+                ? s.undated
+                  ? ` · since ${esc(s.fy)} or earlier (${s.undated} undated)`
+                  : ` · since ${esc(s.fy)}`
+                : " · year unknown (no dated joint work)"
+            );
+          if (s.works.length)
+            html +=
+              `<ul>` +
+              String(s.works.slice(0, 3).map(workLink).join("")) +
+              `</ul>` +
+              String(
+                s.works.length > 3
+                  ? `<div class="hint u-m2">and ${s.works.length - 3} more (all listed ` +
+                      `in the CSV with references)</div>`
+                  : ""
+              );
+          html += `</li>`;
+        }
+      });
+      html += `</ol></div>`;
+    });
+    if (res.paths.length > 1 || res.nPeopleChains > BigInt(res.paths.length))
+      html +=
+        `<div class="more">Chains are ordered by Newman distance, then ` +
+        `vintage. Showing ${res.paths.length} of ${fmt(res.nPeopleChains)} ` +
+        `chains of people (one per person in the middle of the chain where the ` +
+        `two searches met).</div>`;
+    html += `</div></div>`;
+  }
+  if (res.skippedAbstracts)
+    html +=
+      `<div class="note">${fmt(res.skippedAbstracts)} likely meeting ` +
+      `abstract` +
+      String(res.skippedAbstracts === 1 ? " was" : "s were") +
+      ` left out. To count them, choose “All OpenAlex records” under ` +
+      `Options › Definition.</div>`;
+  if (o.maxAuthors)
+    html +=
+      `<div class="note">Works with more than ${o.maxAuthors} authors ` +
+      `were skipped, so the true CN could be lower.</div>`;
+  if (o.count !== "pubs")
+    html +=
+      `<div class="note">This CN uses a variant definition (${esc(DEFS[o.count])}). ` +
+      `The standard Collabris number counts publications only.</div>`;
+  html += downloads();
+  el.innerHTML = html;
+  const cb = $("chainsBtn");
+  if (cb)
+    cb.addEventListener("click", () => {
+      const pnl = $("chainsPanel"),
+        open = pnl.hidden;
+      pnl.hidden = !open;
+      cb.setAttribute("aria-pressed", String(open));
+      cb.setAttribute("aria-expanded", String(open));
+      cb.textContent = open ? "Hide results" : "Show results";
+    });
+  bindDownloads();
+}
+// Every connection is resolved against OpenAlex, which changes. Both downloads carry this, so a
+// published number can be audited later against the data it actually rested on.
+const REPRODUCIBILITY =
+  "Every connection is resolved against OpenAlex, which is re-indexed continually, so this " +
+  "result is reproducible only relative to the OpenAlex data available at the time of computation.";
+const pageVersion = () => {
+  const e = document.querySelector(".ver");
+  return e ? e.textContent.trim() : null;
+};
+function openalexProvenance(r) {
+  return {
+    source: "OpenAlex REST API",
+    endpoint: API,
+    snapshot_version: null,
+    snapshot_version_note:
+      "OpenAlex publishes no snapshot version through its API; the " +
+      "retrieval window below is what fixes the data state.",
+    retrieved_first: fetched.first,
+    retrieved_last: fetched.last,
+    requests_for_this_result: r.requests,
+    requests_in_this_browser_tab: fetched.count,
+    cache_note:
+      "Replies are cached in the browser tab (up to about 60 MB; the " +
+      "replies used longest ago are dropped first), so data used here " +
+      "may have been retrieved at any point in the window above."
+  };
+}
+function downloads() {
+  return (
+    `<div class="export"><div class="actions"><button type="button" ` +
+    `class="toggle openExplain" title="Opens in a new tab">Explanation ` +
+    `↗</button><button type="button" id="exportBtn" class="toggle" ` +
+    `aria-pressed="false" aria-expanded="false" aria-controls="exportPanel">Export ` +
+    `for citation or checking</button></div><div id="exportPanel" ` +
+    `hidden>
+    <p>For quoting or auditing a result. The JSON holds ` +
+    `the answer with the exact chain counts, up to five representative ` +
+    `shortest chains with their papers, and the OpenAlex retrieval window ` +
+    `it rests on. The CSV holds the co-authorship network the two searches ` +
+    `explored, with every link that lies on any shortest chain marked.</p>
+    <div class="actions"><button ` +
+    `id="dlJson">Download result (JSON)</button><button id="dlEdges">Download ` +
+    `explored network (CSV)</button><label class="chk u-center"><input ` +
+    `id="csvRefs" type="checkbox" ${window.csvRefsOn ? "checked" : ""}> ` +
+    `Include references (one row per joint work; for links off the ` +
+    `shortest chains only up to 100,000 rows)</label></div></div></div>`
+  );
+}
+function bindDownloads() {
+  const eb = $("exportBtn");
+  if (eb)
+    eb.addEventListener("click", () => {
+      const pnl = $("exportPanel"),
+        open = pnl.hidden;
+      pnl.hidden = !open;
+      eb.setAttribute("aria-pressed", String(open));
+      eb.setAttribute("aria-expanded", String(open));
+    });
+  const fileStem = r => `${slug(r.people.A.name)}__${slug(r.people.B.name)}`;
+  $("dlJson").onclick = () => {
+    const r = lastResult;
+    if (!r) return;
+    const out = {
+      person_a: r.people.A,
+      person_b: r.people.B,
+      definition: r.definition,
+      definition_label: DEFS[r.definition],
+      collabris_number: r.cn,
+      newman_distance: r.newman ?? null,
+      vintage: r.vintage ?? null,
+      vintage_upper_bound: r.vintageUpperBound ?? null,
+      vintage_undetermined: !!r.vintageUndetermined,
+      n_people_chains: r.cn === null ? null : bigJson(r.nPeopleChains),
+      n_paper_routes: r.cn === null ? null : bigJson(r.nChains),
+      retrieval_complete: !r.incomplete,
+      conditional_on:
+        "The CN, Newman distance, vintage and chain counts are exact only for the co-authorship graph " +
+        "built from the OpenAlex records successfully retrieved in this run, with OpenAlex's author " +
+        "identities (no merging beyond the records ticked for each person) and the work types counted.",
+      search_depths: r.depths || null,
+      search_incomplete: r.incomplete
+        ? {
+            ...r.incomplete,
+            note:
+              "OpenAlex returned fewer works than it reported for some queries: " +
+              "the CN, Newman distance and vintage are upper bounds, the chain counts minimums."
+          }
+        : null,
+      max_authors: r.maxAuthors || null,
+      works_with_full_author_list_fetched: r.fullAuthorLists ?? 0,
+      work_types_also_counted: r.workTypes || null,
+      meeting_abstracts_skipped: r.skippedAbstracts ?? null,
+      best_explored_newman: r.explored || null,
+      n_shortest_chain_links: r.chainEdges
+        ? new Set(r.chainEdges.map(s => (s.from < s.to ? s.from + "|" + s.to : s.to + "|" + s.from))).size
+        : null,
+      representative_paths: r.paths || [],
+      orcid_check: r.orcidCheck
+        ? {
+            ...r.orcidCheck,
+            nPeopleChains:
+              r.orcidCheck.nPeopleChains === undefined || r.orcidCheck.nPeopleChains === null
+                ? null
+                : bigJson(r.orcidCheck.nPeopleChains),
+            note:
+              "Search repeated with OpenAlex author records that share an ORCID " +
+              "taken as one person. Not used for the reported numbers."
+          }
+        : null,
+      representative_paths_note:
+        "Up to five representative shortest chains (lowest Newman distance, " +
+        "then vintage, one per person where the two searches met). " +
+        "n_people_chains and n_paper_routes count all shortest chains; " +
+        "the explored-network CSV marks every link that lies on any of " +
+        "them.",
+      no_connection: r.cn === null ? r.reason : null,
+      requests: r.requests,
+      computed: (r.computedAt || new Date()).toISOString(),
+      calculator_version: pageVersion(),
+      reproducibility: REPRODUCIBILITY,
+      openalex: openalexProvenance(r)
+    };
+    save(JSON.stringify(out, null, 2), "application/json", `collabris_${fileStem(r)}.json`);
+  };
+  $("dlEdges").onclick = () => {
+    const r = lastResult;
+    if (!r) return;
+    // Names and titles come from OpenAlex. A cell starting with = + - @ (or a tab / carriage
+    // return) can be run as a formula by spreadsheet software even when quoted, so such a cell
+    // gets a leading apostrophe; ordinary CSV quoting is applied after that.
+    const q = s => {
+      let t = String(s);
+      if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+      return `"${t.replace(/"/g, '""')}"`;
+    };
+    const refs = $("csvRefs") && $("csvRefs").checked;
+    // A large exploration can hold hundreds of thousands of joint works. References are always
+    // written for the links on the shortest chains; for the other explored links only while the
+    // whole file stays within REF_ROWS_MAX reference rows, so the download cannot explode.
+    const REF_ROWS_MAX = 100000;
+    const chainSteps = r.chainEdges || [];
+    const chainKeys = new Set();
+    for (const s of chainSteps) chainKeys.add(s.from < s.to ? s.from + "|" + s.to : s.to + "|" + s.from);
+    let refTotal = 0;
+    if (refs) for (const [e, d] of r.E || []) refTotal += chainKeys.has(e) ? 0 : d.ev ? d.ev.length : 0;
+    const offChainRefs = refs && refTotal <= REF_ROWS_MAX;
+    const head = "source_id,source,target_id,target,joint_works,newman_strength,first_year,undated_works,on_shortest_chain";
+    const oa = openalexProvenance(r);
+    const one = s => String(s).replace(/[\r\n]/g, " ");
+    const lines = [
+      `# Collabris calculator ${pageVersion() || ""} - explored co-authorship network`,
+      `# person A: ${one(r.people.A.name)} [${r.people.A.ids.join(" ")}]; person B: ${one(r.people.B.name)} ` +
+        `[${r.people.B.ids.join(" ")}]`,
+      `# CN = ` +
+        String(
+          r.cn === null
+            ? r.incomplete
+              ? "not found (search incomplete)"
+              : "not found"
+            : r.incomplete && r.cn > 1
+              ? "at most " + r.cn + " (search incomplete)"
+              : r.cn
+        ) +
+        `; chains of people: ` +
+        String(r.cn === null ? "-" : fmt(r.nPeopleChains)) +
+        `; paper routes: ` +
+        String(r.cn === null ? "-" : fmt(r.nChains)) +
+        `; definition: ${DEFS[r.definition]}`,
+      `# data: ${oa.source} ${oa.endpoint}, retrieved ${oa.retrieved_first || "-"} ` +
+        `to ${oa.retrieved_last || "-"} (UTC), ${oa.requests_for_this_result} ` +
+        `request(s) for this result, ${oa.requests_in_this_browser_tab} ` +
+        `in this browser tab`,
+      `# ${REPRODUCIBILITY}`,
+      `# computed ` +
+        String((r.computedAt || new Date()).toISOString()) +
+        String(
+          r.workTypes
+            ? `; also counted: non-publication records ` +
+                String(r.workTypes.non_publication_records ? "yes" : "no") +
+                `, likely meeting abstracts ` +
+                String(r.workTypes.likely_meeting_abstracts ? "yes" : "no")
+            : ""
+        ),
+      ...(refs && !offChainRefs
+        ? [
+            `# references: written for the links on the shortest chains only; ` +
+              `the other explored links have ${fmt(refTotal)} joint works, ` +
+              `more than the ${fmt(REF_ROWS_MAX)}-row limit, so they get one ` +
+              `row each with the reference columns empty`
+          ]
+        : []),
+      refs ? head + ",ref_year,ref_title,ref_doi_or_url" : head
+    ];
+    const key = (u, v) => (u < v ? u + "|" + v : v + "|" + u),
+      done = new Set();
+    const refRows = (base, works, withRefs = refs) => {
+      if (!withRefs) return [refs ? [...base, "", "", ""].join(",") : base.join(",")];
+      const out = [];
+      const seenRef = new Set();
+      for (const w of works || []) {
+        const url = safeDoi(w.doi) || "https://openalex.org/works/" + w.id;
+        if (seenRef.has(url)) continue;
+        seenRef.add(url);
+        out.push([...base, q(w.year ?? ""), q(w.title || ""), q(url)].join(","));
+      }
+      return out.length ? out : [[...base, "", "", ""].join(",")];
+    };
+    for (const s of chainSteps) {
+      const k = key(s.from, s.to);
+      if (done.has(k)) continue;
+      done.add(k);
+      for (const row of refRows(
+        [
+          q(s.from),
+          q(r.names.get(s.from) || s.from),
+          q(s.to),
+          q(r.names.get(s.to) || s.to),
+          s.w,
+          (+s.nw).toFixed(4),
+          q(s.fy ?? ""),
+          s.undated || 0,
+          "yes"
+        ],
+        s.works
+      ))
+        lines.push(row);
+    }
+    for (const [e, d] of r.E || []) {
+      if (done.has(e)) continue;
+      const [u, v] = e.split("|");
+      // push row by row: spreading a very large array into push() can overflow the call stack
+      for (const row of refRows(
+        [q(u), q(r.names.get(u) || u), q(v), q(r.names.get(v) || v), d.w, d.nw.toFixed(4), q(d.fy ?? ""), d.nd || 0, "no"],
+        d.ev,
+        offChainRefs
+      ))
+        lines.push(row);
+    }
+    save(lines.join("\n"), "text/csv", `collabris_network_${fileStem(r)}.csv`);
+  };
+}
+const slug = s =>
+  String(s)
+    .normalize("NFKD")
+    .replace(/[^\w]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .toLowerCase() || "person";
+function save(text, type, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type}));
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// ------------------------------------------------------------------ API key safety
+// The key field must start empty: browsers like to put saved passwords into anything that looks
+// like a login form. If OpenAlex rejects a key anyway, it is cleared and the user is told.
+try {
+  $("apikey").value = "";
+} catch (e) {}
+// One person with more than 10,000 works can only be read in part without an API key.
+function onWorksTruncated(id, total) {
+  const n = $("truncNote");
+  if (!n) return;
+  n.hidden = false;
+  n.textContent =
+    (n.textContent ? n.textContent + " " : "") +
+    (`Without an API key OpenAlex lets the calculator read only the ` +
+      `first 10,000 of the ${total.toLocaleString()} works of ${id}; ` +
+      `a free key (Options) lets it read them all.`);
+}
+// "Add it under Options" (under the search boxes and in the usage-limit message): open Options,
+// bring the API key field into view and put the cursor in it.
+function openKeyField() {
+  const d = $("opts"),
+    f = $("apikey");
+  if (!d || !f) return;
+  d.open = true;
+  f.scrollIntoView({behavior: "smooth", block: "center"});
+  setTimeout(() => f.focus({preventScroll: true}), 300);
+}
+// "Include references" in the export panel (an event listener rather than an inline handler,
+// which a strict Content-Security-Policy blocks).
+document.addEventListener("change", e => {
+  if (e.target && e.target.id === "csvRefs") window.csvRefsOn = e.target.checked;
+});
+document.addEventListener("click", e => {
+  const t = e.target.closest && e.target.closest(".openKey");
+  if (t) {
+    e.preventDefault();
+    openKeyField();
+  }
+});
+// Before a calculation starts without an API key: what the free OpenAlex allowance covers, so a
+// stop part-way through comes as no surprise.
+function showRunAdvice(o) {
+  const el = $("runAdvice");
+  if (!el) return;
+  if (o.apiKey) {
+    el.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+  const seen = rateSeen && !rateSeen.keyUsed && rateSeen.remaining !== null ? rateSeen : null;
+  el.innerHTML =
+    `<b>No OpenAlex API key is set.</b> Without one, OpenAlex gives ` +
+    `$0.10 of requests a day, ` +
+    (`shared by everyone on your network address (a whole university, ` + `or conference wifi): `) +
+    (`about 1,000 lookups, or 100 name searches. Two well-connected people ` + `four or more steps apart `) +
+    (`can need several thousand lookups, so a long calculation may stop part-way until the allowance ` +
+      `resets at `) +
+    `${esc(resetTimeText())}. ` +
+    String(
+      seen
+        ? `OpenAlex last reported ${esc(fmt(seen.remaining))} credits left ` +
+            `today ` +
+            (`(` + String(esc(new Date(seen.at).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}))) + `). `)
+        : ""
+    ) +
+    `A free personal API key gives you $1 a day of your own. ` +
+    (`<button type="button" class="toggle openKey">Add an API key ` + `under Options</button>`);
+  el.hidden = false;
+}
+function onKeyRejected() {
+  const f = $("apikey");
+  if (f) f.value = "";
+  const n = $("keyNote");
+  if (n) {
+    n.hidden = false;
+    n.textContent =
+      "OpenAlex rejected the API key that was in Options (possibly " +
+      "filled in by the browser), so it was cleared and the search " +
+      "continued without a key. To use your own key, paste it under " +
+      "Options; check it at openalex.org/settings/api.";
+  }
+}
+// ------------------------------------------------------------------ Explanation panel
+function toggleExplain(show) {
+  const ex = $("explain"),
+    btn = $("explainBtn");
+  const open = show === undefined ? ex.hidden : show;
+  ex.hidden = !open;
+  btn.setAttribute("aria-expanded", String(open));
+  btn.textContent = open ? "Hide explanation" : "Explanation ↗";
+  if (open) ex.scrollIntoView({behavior: "smooth", block: "start"});
+}
+// The explanation opens in its own browser tab: the same file, opened with "#explanation",
+// shows only the explanation. If the browser blocks the new tab, it opens here instead.
+const EXPLAIN_ONLY = location.hash === "#explanation";
+function openExplainTab() {
+  const w = window.open(location.href.split("#")[0] + "#explanation", "_blank");
+  if (!w) toggleExplain(true);
+}
+if (EXPLAIN_ONLY) {
+  document.body.classList.add("explain-only");
+  document.title = "How the Collabris Number Calculator works";
+  toggleExplain(true);
+  $("explainClose").textContent = "Close tab";
+  $("explainClose").addEventListener("click", () => {
+    window.close();
+  });
+} else {
+  $("explainBtn").addEventListener("click", () => {
+    if ($("explain").hidden) openExplainTab();
+    else toggleExplain(false);
+  });
+  $("explainClose").addEventListener("click", () => {
+    toggleExplain(false);
+    $("explainBtn").focus();
+  });
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest(".openExplain");
+  if (a) {
+    e.preventDefault();
+    if (EXPLAIN_ONLY) toggleExplain(true);
+    else openExplainTab();
+  }
+});
+for (const s of SIDES) {
+  $("tickAll" + s).addEventListener("change", e => {
+    $("candList" + s)
+      .querySelectorAll("input[type=checkbox]")
+      .forEach(b => {
+        b.checked = e.target.checked;
+      });
+    updateSel(s);
+  });
+  $("searchBtn" + s).addEventListener("click", () => search(s));
+  $("q" + s).addEventListener("keydown", e => {
+    if (e.key === "Enter") search(s);
+  });
+}
+$("runBtn").addEventListener("click", run);
+$("stopBtn").addEventListener("click", () => running && running.abort());
+updateSel();
+
+// ------------------------------------------------------------------ Bug report
+// The button only reveals an e-mail link; nothing is sent from the page. The link is filled in
+// when clicked, with the page version and the two people last calculated, so a report can be traced.
+(function () {
+  const btn = document.getElementById("bugBtn"),
+    panel = document.getElementById("bugPanel"),
+    mail = document.getElementById("bugMail");
+  if (!btn || !panel || !mail) return;
+  // "Report a bug" and "About" are two-state buttons; at most one of their panels is open.
+  const pairs = [
+    [btn, panel],
+    [document.getElementById("citeBtn"), document.getElementById("citePanel")]
+  ].filter(([b, p]) => b && p);
+  const setOpen = (b, p, open) => {
+    p.hidden = !open;
+    b.setAttribute("aria-expanded", String(open));
+    b.setAttribute("aria-pressed", String(open));
+  };
+  for (const [b, p] of pairs)
+    b.addEventListener("click", () => {
+      const open = p.hidden;
+      for (const [b2, p2] of pairs) setOpen(b2, p2, b2 === b ? open : false);
+    });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") for (const [b, p] of pairs) setOpen(b, p, false);
+  });
+  const av = document.getElementById("aboutVer");
+  if (av) av.textContent = (typeof pageVersion === "function" && pageVersion()) || "unknown";
+  // The version is the UTC build time YYYYMMDDHHMM; spelled out as "HH:MM on DD Month YYYY (UTC)".
+  const ad = document.getElementById("aboutDate"),
+    vs = (typeof pageVersion === "function" && pageVersion()) || "";
+  const vm = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(vs);
+  const MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ];
+  if (ad)
+    ad.textContent = vm ? `${vm[4]}:${vm[5]} on ${+vm[3]} ${MONTHS[+vm[2] - 1]} ${vm[1]} (UTC)` : "an unknown time";
+  const cc = document.getElementById("citeCopy");
+  if (cc)
+    cc.addEventListener("click", async () => {
+      const t = document.getElementById("citeText").textContent.trim(),
+        out = document.getElementById("citeCopied");
+      try {
+        await navigator.clipboard.writeText(t);
+        out.textContent = "Copied.";
+      } catch (e) {
+        const r = document.createRange();
+        r.selectNodeContents(document.getElementById("citeText"));
+        const sel = getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        out.textContent = "Selected - press Ctrl+C (⌘C on a Mac) to copy.";
+      }
+      setTimeout(() => {
+        out.textContent = "";
+      }, 4000);
+    });
+  mail.addEventListener("click", () => {
+    const v = (typeof pageVersion === "function" && pageVersion()) || "unknown";
+    const who = p => p.name + " [" + (p.ids || []).join(" ") + "]";
+    const pair =
+      typeof lastResult !== "undefined" && lastResult && lastResult.people
+        ? who(lastResult.people.A) + " and " + who(lastResult.people.B)
+        : "(none)";
+    const body =
+      "Page version: " +
+      v +
+      "\nPeople searched: " +
+      pair +
+      "\nBrowser: " +
+      navigator.userAgent +
+      "\n\nWhat I did:\n\nWhat I expected:\n\nWhat the page showed:\n";
+    mail.href =
+      "mailto:iguzei@chem.wisc.edu?subject=" +
+      encodeURIComponent("Collabris calculator bug report (" + v + ")") +
+      "&body=" +
+      encodeURIComponent(body);
+  });
+})();
+</script>
+</body>
+</html>
