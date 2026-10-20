@@ -160,6 +160,8 @@ li.link a{color:var(--accent)}
 .metric .ks{font-size:12.5px;color:var(--ink-3);margin:-2px 0 4px}
 .metric .v{font-size:28px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;margin:2px 0}
 .metric .d{font-size:13px;color:var(--ink-3);line-height:1.45}
+.metric .prov{display:table;margin:5px 0 1px;padding:0 7px;border-radius:999px;
+  font-size:11.5px;font-weight:600;color:var(--ink-2);background:var(--surface);border:1px solid var(--line)}
 .export{margin-top:20px}
 .export #exportPanel{margin-top:4px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;
   background:var(--surface-2)}
@@ -250,7 +252,7 @@ body.explain-only header h1{margin-bottom:18px}
   <header>
     <div class="headtop">
       <div class="headtext">
-      <h1>Collabris Number Calculator <span class="ver" title="Page version (UTC build time)">202610201712</span></h1>
+      <h1>Collabris Number Calculator <span class="ver" title="Page version (UTC build time)">202610201726</span></h1>
       <p>The Collabris number (CN) shows how many co-authorship steps separate any two scientists. It generalises
         the Erdős number: instead of measuring everyone's distance to one fixed person, it measures the distance
         between the two people you choose, using the open scholarly index <a href="https://openalex.org"
@@ -416,7 +418,10 @@ body.explain-only header h1{margin-bottom:18px}
         under Options. They are not a statement about the true collaboration record, which OpenAlex may hold
         incompletely or with author records split or merged wrongly. For every query, the number of works received
         is checked against the number OpenAlex reports; if any are missing, the result says the search was incomplete
-        and shows the CN as an upper bound (“CN ≤ 3”), because missing works could only add links. Matching counts
+        and shows the CN as an upper bound (“CN ≤ 3”), because missing works could only add links. The Newman
+        distance, vintage, chains of people and paper routes are then marked “provisional”, not given as bounds:
+        if the missing works hold a shorter chain, these figures belong to a different set of chains and can move
+        either way (ten 3-step chains can give way to a single 2-step chain). Matching counts
         are a strong sign that nothing was lost, not a proof: works OpenAlex does not count are not seen either.
         OpenAlex list results show only the first 100 authors of a work, so a work showing 100 authors is read
         again on its own to get its full author list. If one circle stops growing before the two meet, the two people are not connected in OpenAlex at
@@ -2502,14 +2507,18 @@ function incompleteNote(inc, n) {
     `<div class="note"><b>The search was incomplete.</b> For ${fmt(inc.queries)} ` +
     `OpenAlex ` +
     (`quer${inc.queries === 1 ? "y" : "ies"}, fewer works came back ` + `than OpenAlex reported `) +
-    (`(${fmt(inc.read)} of ${fmt(inc.expected)}; ${fmt(inc.missing)} ` + `missing). Missing works can `) +
-    `only add links, so ` +
+    `(${fmt(inc.read)} of ${fmt(inc.expected)}; ${fmt(inc.missing)} missing). ` +
     String(
       n === null
-        ? "a chain between the two may exist among them."
-        : `the true CN may be lower than ${n}, the Newman distance and ` +
-            `vintage may be ` +
-            `lower too, and the chain counts are minimums.`
+        ? "Missing works can only add links, so a chain between the two may exist among them."
+        : n === 1
+          ? "Missing publications cannot change the Collabris number of 1, but they may add joint works. " +
+            "The Newman distance, vintage and number of joint publications are provisional estimates for " +
+            "the retrieved network and are not guaranteed bounds on the complete-network values."
+          : "Missing publications may reveal a shorter co-authorship chain. The reported Collabris number " +
+            "is therefore an upper bound. Newman distance, vintage, chains of people, and paper routes are " +
+            "provisional estimates for the retrieved network and are not guaranteed bounds on the " +
+            "complete-network values."
     ) +
     (` Running the calculation again may complete it (replies already ` + `received in this tab are `) +
     `reused)` +
@@ -2535,8 +2544,9 @@ function renderResult(res, o) {
       <p>${esc(res.reason)} ` +
       String(
         inc
-          ? "Because the search was incomplete, a chain may exist all the same, " +
-              "and the true CN may be lower than this limit."
+          ? "Because the search was incomplete, a chain may exist among " +
+              "the missing publications. No conclusion can be drawn about " +
+              "the true CN from this unsuccessful search."
           : res.exhausted
             ? "Check that the right OpenAlex record(s) were ticked for both people."
             : "Raise the limit under Options, or check that the right OpenAlex " + "record(s) were selected."
@@ -2560,9 +2570,16 @@ function renderResult(res, o) {
         : inc
           ? `At most ${n} co-authorship steps apart: the search was incomplete.`
           : `${n} co-authorship steps apart.`;
-  // An incomplete search (works OpenAlex reported but did not return) can only have missed
-  // links: the CN, Newman distance and vintage found are upper bounds, the counts minimums.
+  // An incomplete search (works OpenAlex reported but did not return) can only have missed links,
+  // so the CN found is an upper bound. Nothing similar holds for the other figures: if the missing
+  // works hold a shorter chain, the Newman distance, vintage and counts are those of a different
+  // set of chains and can move either way (10 three-step chains can give way to one two-step
+  // chain). They are shown as provisional, with no inequality sign.
   const partial = n > 1 && !!inc;
+  const prov = n >= 1 && !!inc;
+  const provTag = prov
+    ? `<span class="prov" title="Search incomplete: an estimate for the retrieved network, not a bound">provisional</span>`
+    : "";
   let html =
     pairTitle(res) +
     `<div class="hero"><div ` +
@@ -2577,18 +2594,18 @@ function renderResult(res, o) {
         : ""
     ) +
     `</p></div></div>` +
-    String(partial ? incompleteNote(inc, n) : "");
+    String(prov ? incompleteNote(inc, n) : "");
   if (n > 0) {
     html +=
       `<div class="metrics">
       <div class="metric"><div class="k">Newman ` +
-      `distance</div><div class="v">${partial ? "≤ " : ""}${nfmt(res.newman)}</div><div ` +
+      `distance${provTag}</div><div class="v">${nfmt(res.newman)}</div><div ` +
       `class="ks">minimum among the shortest (${n}-step) chains</div>
         <div class="d">Sum ` +
       `of 1/strength along the closest ${n}-step chain. Lower = closer.</div></div>
-      <div class="metric"><div class="k">Vintage</div><div class="v">${
+      <div class="metric"><div class="k">Vintage${provTag}</div><div class="v">${
         res.vintage !== null && res.vintage !== undefined
-          ? (partial ? "≤ " : "") + esc(res.vintage)
+          ? esc(res.vintage)
           : res.vintageUpperBound !== null && res.vintageUpperBound !== undefined
             ? "≤ " + esc(res.vintageUpperBound)
             : "–"
@@ -2603,17 +2620,17 @@ function renderResult(res, o) {
       ` +
       String(
         n === 1
-          ? `<div class="metric"><div class="k">Joint publications</div><div ` +
+          ? `<div class="metric"><div class="k">Joint publications${provTag}</div><div ` +
               `class="v">${fmt(res.nChains)}</div>
         <div class="d">Works the two share in OpenAlex. More = more robustly ` +
               `connected.</div></div>`
-          : `<div class="metric"><div class="k">Chains of people</div><div ` +
-              `class="v">${partial ? "≥ " : ""}${fmt(res.nPeopleChains)}</div>
+          : `<div class="metric"><div class="k">Chains of people${provTag}</div><div ` +
+              `class="v">${fmt(res.nPeopleChains)}</div>
         <div class="d">Different ${n}-step sequences of co-authors ` +
               `between them. Distinct sequences can share people or links, ` +
               `so they are not necessarily independent routes.</div></div>
-      <div class="metric"><div class="k">Paper routes</div><div ` +
-              `class="v">${partial ? "≥ " : ""}${fmt(res.nChains)}</div>
+      <div class="metric"><div class="k">Paper routes${provTag}</div><div ` +
+              `class="v">${fmt(res.nChains)}</div>
         <div class="d">The same chains counted paper by paper: ` +
               `each link multiplies by its joint works.</div></div>`
       ) +
@@ -2805,6 +2822,8 @@ function bindDownloads() {
       n_people_chains: r.cn === null ? null : bigJson(r.nPeopleChains),
       n_paper_routes: r.cn === null ? null : bigJson(r.nChains),
       retrieval_complete: !r.incomplete,
+      collabris_number_is_upper_bound: !!r.incomplete && r.cn !== null && r.cn > 1,
+      secondary_metrics_provisional: !!r.incomplete && r.cn !== null && r.cn >= 1,
       conditional_on:
         "The CN, Newman distance, vintage and chain counts are exact only for the co-authorship graph " +
         "built from the OpenAlex records successfully retrieved in this run, with OpenAlex's author " +
@@ -2813,9 +2832,14 @@ function bindDownloads() {
       search_incomplete: r.incomplete
         ? {
             ...r.incomplete,
-            note:
-              "OpenAlex returned fewer works than it reported for some queries: " +
-              "the CN, Newman distance and vintage are upper bounds, the chain counts minimums."
+            note: r.cn === null
+              ? "OpenAlex returned fewer works than it reported for some queries. No chain was found in the " +
+                "works read, but a chain may exist among the missing publications. No conclusion can be " +
+                "drawn about the true CN from this unsuccessful search."
+              : "OpenAlex returned fewer works than it reported for some queries. Missing publications may " +
+              "reveal a shorter co-authorship chain, so collabris_number is an upper bound (for CN 1 it " +
+              "cannot change). newman_distance, vintage, n_people_chains and n_paper_routes are provisional " +
+              "estimates for the retrieved network, not guaranteed bounds on the complete-network values."
           }
         : null,
       max_authors: r.maxAuthors || null,
@@ -2897,7 +2921,12 @@ function bindDownloads() {
         String(r.cn === null ? "-" : fmt(r.nPeopleChains)) +
         `; paper routes: ` +
         String(r.cn === null ? "-" : fmt(r.nChains)) +
-        `; definition: ${DEFS[r.definition]}`,
+        `; definition: ${DEFS[r.definition]}` +
+        String(
+          r.incomplete && r.cn !== null && r.cn >= 1
+            ? "; search incomplete: chain counts, Newman distance and vintage are provisional, not bounds"
+            : ""
+        ),
       `# data: ${oa.source} ${oa.endpoint}, retrieved ${oa.retrieved_first || "-"} ` +
         `to ${oa.retrieved_last || "-"} (UTC), ${oa.requests_for_this_result} ` +
         `request(s) for this result, ${oa.requests_in_this_browser_tab} ` +
